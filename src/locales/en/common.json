@@ -1,0 +1,101 @@
+{
+  "app": {
+    "name": "DayTradeDak Admin",
+    "description": "Professional Trading Platform Administration"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "subscriptions": "Subscriptions",
+    "content": "Content",
+    "payments": "Payments",
+    "analytics": "Analytics",
+    "transactions": "Transactions",
+    "reports": "Reports",
+    "settings": "Settings",
+    "logout": "Logout",
+    "meetings": "Meetings",
+    "events": "Events",
+    "courses": "Courses",
+    "announcements": "Announcements",
+    "audit_logs": "Audit Logs"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "view": "View",
+    "add": "Add",
+    "remove": "Remove",
+    "confirm": "Confirm",
+    "back": "Back",
+    "close": "Close",
+    "submit": "Submit",
+    "download": "Download",
+    "upload": "Upload",
+    "clear": "Clear",
+    "select_all": "Select All",
+    "deselect_all": "Deselect All"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "failed": "Failed",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "suspended": "Suspended",
+    "expired": "Expired",
+    "cancelled": "Cancelled"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "en": "English",
+    "es": "Spanish"
+  },
+  "common": {
+    "loading": "Loading...",
+    "no_data": "No data available",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "total": "Total",
+    "from": "From",
+    "to": "To",
+    "of": "of",
+    "page": "Page",
+    "rows_per_page": "Rows per page",
+    "all": "All",
+    "selected": "Selected",
+    "showing": "Showing",
+    "results": "results"
+  },
+  "filters": {
+    "date_range": "Date Range",
+    "status": "Status",
+    "type": "Type",
+    "category": "Category",
+    "apply": "Apply Filters",
+    "reset": "Reset Filters",
+    "custom_range": "Custom Range",
+    "last_7_days": "Last 7 Days",
+    "last_30_days": "Last 30 Days",
+    "last_90_days": "Last 90 Days",
+    "this_month": "This Month",
+    "last_month": "Last Month",
+    "this_year": "This Year"
+  }
+}

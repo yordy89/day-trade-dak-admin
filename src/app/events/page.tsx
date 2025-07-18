@@ -1,0 +1,590 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Container,
+  Grid,
+  IconButton,
+  TextField,
+  Typography,
+  Chip,
+  Menu,
+  MenuItem,
+  Alert,
+  Skeleton,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  InputAdornment,
+} from '@mui/material'
+import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid'
+import {
+  Add,
+  Edit,
+  Delete,
+  MoreVert,
+  Search,
+  Event as EventIcon,
+  People,
+  AttachMoney,
+  CalendarToday,
+  Download,
+  FilterList,
+} from '@mui/icons-material'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { useEventService } from '@/services/event.service'
+import { useSnackbar } from '@/hooks/use-snackbar'
+import { Event } from '@/types/event'
+import { ConfirmDialog } from '@/components/dialogs/confirm-dialog'
+import { PageHeader } from '@/components/page-header'
+import { AdminLayout } from '@/components/layout/admin-layout'
+
+export default function EventsPage() {
+  const router = useRouter()
+  const eventService = useEventService()
+  const { showSuccess, showError } = useSnackbar()
+
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+  const [totalEvents, setTotalEvents] = useState(0)
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  })
+
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+
+  // Menu and dialog states
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true)
+      const response = await eventService.getEvents({
+        page: paginationModel.page + 1,
+        limit: paginationModel.pageSize,
+        search: searchTerm,
+        type: typeFilter,
+        status: statusFilter,
+      })
+      // Handle the actual API response structure
+      if (response.events) {
+        setEvents(response.events)
+        setTotalEvents(response.pagination?.total || response.events.length)
+      } else if (response.data) {
+        setEvents(response.data)
+        setTotalEvents(response.total || 0)
+      } else {
+        setEvents([])
+        setTotalEvents(0)
+      }
+    } catch (error) {
+      showError('Error al cargar los eventos')
+      console.error('Error fetching events:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchEvents()
+  }, [paginationModel, searchTerm, typeFilter, statusFilter])
+
+  const handleCreateEvent = () => {
+    router.push('/events/create')
+  }
+
+  const handleEditEvent = (event: Event) => {
+    router.push(`/events/${event._id}/edit`)
+  }
+
+  const handleViewEvent = (event: Event) => {
+    router.push(`/events/${event._id}`)
+  }
+
+  const handleDeleteEvent = async () => {
+    if (!selectedEvent) return
+
+    try {
+      await eventService.deleteEvent(selectedEvent._id)
+      showSuccess('Evento eliminado exitosamente')
+      setDeleteDialogOpen(false)
+      setSelectedEvent(null)
+      fetchEvents()
+    } catch (error) {
+      showError('Error al eliminar el evento')
+      console.error('Error deleting event:', error)
+    }
+  }
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, eventData: Event) => {
+    setAnchorEl(event.currentTarget)
+    setSelectedEvent(eventData)
+  }
+
+  const handleMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleExportRegistrations = async (eventId: string, format: 'csv' | 'excel' | 'pdf') => {
+    try {
+      const blob = await eventService.exportRegistrations(eventId, format)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `registrations-${eventId}.${format === 'excel' ? 'xlsx' : format}`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      showSuccess('Exportación completada')
+    } catch (error) {
+      showError('Error al exportar registraciones')
+      console.error('Error exporting registrations:', error)
+    }
+  }
+
+  const columns: GridColDef[] = [
+    {
+      field: 'name',
+      headerName: 'Nombre',
+      flex: 1,
+      minWidth: 300,
+      renderCell: (params) => (
+        <Box>
+          <Typography variant="body2" fontWeight={600}>
+            {params.row.name}
+          </Typography>
+          {params.row.title && (
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ 
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {params.row.title}
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      field: 'type',
+      headerName: 'Tipo',
+      width: 180,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const typeLabels = {
+          master_course: 'Master Course',
+          community_event: 'Evento Comunitario',
+          general: 'General',
+        }
+        const typeColors = {
+          master_course: 'primary',
+          community_event: 'success',
+          general: 'default',
+        }
+        const eventType = params.value || 'general'
+        return (
+          <Chip
+            label={typeLabels[eventType as keyof typeof typeLabels] || 'General'}
+            color={typeColors[eventType as keyof typeof typeColors] as any || 'default'}
+            size="small"
+            sx={{ minWidth: 120 }}
+          />
+        )
+      },
+    },
+    {
+      field: 'date',
+      headerName: 'Fecha',
+      width: 150,
+      align: 'left',
+      headerAlign: 'left',
+      renderCell: (params) => {
+        const eventDate = new Date(params.value)
+        return (
+          <Box display="flex" alignItems="center" gap={0.5} height="100%">
+            <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2">
+              {format(eventDate, 'dd MMM yyyy', { locale: es })}
+            </Typography>
+          </Box>
+        )
+      },
+    },
+    {
+      field: 'currentRegistrations',
+      headerName: 'Registros',
+      width: 110,
+      align: 'left',
+      headerAlign: 'left',
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center" gap={0.5} height="100%">
+          <People sx={{ fontSize: 16, color: 'text.secondary' }} />
+          <Typography variant="body2" fontWeight={500}>
+            {params.row.currentRegistrations || params.row.registrations?.length || 0}
+            {params.row.capacity && `/${params.row.capacity}`}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'price',
+      headerName: 'Precio',
+      width: 140,
+      align: 'left',
+      headerAlign: 'left',
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center" gap={0.5} height="100%">
+          <AttachMoney sx={{ fontSize: 16, color: 'text.secondary' }} />
+          <Typography variant="body2" fontWeight={500}>
+            ${(params.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'isActive',
+      headerName: 'Estado',
+      width: 110,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const isActive = params.value !== false
+        return (
+          <Chip
+            label={isActive ? 'Activo' : 'Inactivo'}
+            color={isActive ? 'success' : 'default'}
+            size="small"
+            sx={{ 
+              minWidth: 80,
+              fontWeight: 500
+            }}
+          />
+        )
+      },
+    },
+    {
+      field: 'actions',
+      headerName: 'Acciones',
+      width: 80,
+      align: 'center',
+      sortable: false,
+      renderCell: (params) => (
+        <IconButton
+          size="small"
+          onClick={(e) => handleMenuOpen(e, params.row)}
+        >
+          <MoreVert />
+        </IconButton>
+      ),
+    },
+  ]
+
+  return (
+    <AdminLayout>
+      <Container maxWidth="xl">
+      <PageHeader
+        title="Eventos"
+        subtitle="Gestiona eventos comunitarios y master courses"
+        action={
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleCreateEvent}
+          >
+            Crear Evento
+          </Button>
+        }
+      />
+
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
+                    Total Eventos
+                  </Typography>
+                  <Typography variant="h4" fontWeight={600}>
+                    {loading ? <Skeleton width={60} /> : totalEvents}
+                  </Typography>
+                </Box>
+                <EventIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
+                    Eventos Activos
+                  </Typography>
+                  <Typography variant="h4" fontWeight={600}>
+                    {loading ? <Skeleton width={60} /> : events?.filter(e => e.isActive).length || 0}
+                  </Typography>
+                </Box>
+                <EventIcon sx={{ fontSize: 40, color: 'success.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
+                    Total Registros
+                  </Typography>
+                  <Typography variant="h4" fontWeight={600}>
+                    {loading ? <Skeleton width={60} /> : 
+                      events?.reduce((acc, event) => acc + (event.currentRegistrations || event.registrations?.length || 0), 0) || 0
+                    }
+                  </Typography>
+                </Box>
+                <People sx={{ fontSize: 40, color: 'info.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
+                    Próximo Evento
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {loading ? <Skeleton width={100} /> : 
+                      events?.find(e => new Date(e.date) > new Date())?.name || 'N/A'
+                    }
+                  </Typography>
+                </Box>
+                <CalendarToday sx={{ fontSize: 40, color: 'warning.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Filters */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Buscar eventos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Tipo</InputLabel>
+                <Select
+                  value={typeFilter}
+                  label="Tipo"
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  <MenuItem value="master_course">Master Course</MenuItem>
+                  <MenuItem value="community_event">Evento Comunitario</MenuItem>
+                  <MenuItem value="general">General</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Estado</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label="Estado"
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  <MenuItem value="active">Activo</MenuItem>
+                  <MenuItem value="inactive">Inactivo</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<FilterList />}
+                onClick={() => {
+                  setSearchTerm('')
+                  setTypeFilter('')
+                  setStatusFilter('')
+                }}
+              >
+                Limpiar
+              </Button>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Events Table */}
+      <Card 
+        sx={{ 
+          overflow: 'hidden',
+          '& .MuiDataGrid-root': {
+            border: 'none',
+          }
+        }}
+      >
+        <Box sx={{ width: '100%' }}>
+          <DataGrid
+            rows={events}
+            columns={columns}
+            getRowId={(row) => row._id}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            pageSizeOptions={[10, 25, 50]}
+            rowCount={totalEvents}
+            paginationMode="server"
+            loading={loading}
+            autoHeight
+            disableRowSelectionOnClick
+            rowHeight={70}
+            sx={{
+              '& .MuiDataGrid-cell:focus': {
+                outline: 'none',
+              },
+              '& .MuiDataGrid-row': {
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: 'background.default',
+                borderBottom: 2,
+                borderColor: 'divider',
+                '& .MuiDataGrid-columnHeader': {
+                  fontWeight: 600,
+                },
+              },
+              '& .MuiDataGrid-cell': {
+                borderBottom: 1,
+                borderColor: 'divider',
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-footerContainer': {
+                borderTop: 2,
+                borderColor: 'divider',
+                backgroundColor: 'background.default',
+              },
+            }}
+          />
+        </Box>
+      </Card>
+
+      {/* Action Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={() => {
+          handleViewEvent(selectedEvent!)
+          handleMenuClose()
+        }}>
+          <People sx={{ mr: 1 }} fontSize="small" />
+          Ver Registros
+        </MenuItem>
+        <MenuItem onClick={() => {
+          handleEditEvent(selectedEvent!)
+          handleMenuClose()
+        }}>
+          <Edit sx={{ mr: 1 }} fontSize="small" />
+          Editar
+        </MenuItem>
+        <MenuItem divider />
+        <MenuItem onClick={() => {
+          handleExportRegistrations(selectedEvent!._id, 'excel')
+          handleMenuClose()
+        }}>
+          <Download sx={{ mr: 1 }} fontSize="small" />
+          Exportar Excel
+        </MenuItem>
+        <MenuItem onClick={() => {
+          handleExportRegistrations(selectedEvent!._id, 'csv')
+          handleMenuClose()
+        }}>
+          <Download sx={{ mr: 1 }} fontSize="small" />
+          Exportar CSV
+        </MenuItem>
+        <MenuItem onClick={() => {
+          handleExportRegistrations(selectedEvent!._id, 'pdf')
+          handleMenuClose()
+        }}>
+          <Download sx={{ mr: 1 }} fontSize="small" />
+          Exportar PDF
+        </MenuItem>
+        <MenuItem divider />
+        <MenuItem 
+          onClick={() => {
+            setDeleteDialogOpen(true)
+            handleMenuClose()
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          <Delete sx={{ mr: 1 }} fontSize="small" />
+          Eliminar
+        </MenuItem>
+      </Menu>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDeleteEvent}
+        title="Eliminar Evento"
+        message={`¿Estás seguro de que deseas eliminar el evento "${selectedEvent?.name}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        confirmColor="error"
+      />
+    </Container>
+    </AdminLayout>
+  )
+}

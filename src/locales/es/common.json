@@ -1,0 +1,54 @@
+{
+  "app": {
+    "name": "DayTradeDak Admin",
+    "description": "Administración de Plataforma de Trading Profesional"
+  },
+  "navigation": {
+    "dashboard": "Panel de Control",
+    "users": "Usuarios",
+    "subscriptions": "Suscripciones",
+    "content": "Contenido",
+    "payments": "Pagos",
+    "analytics": "Analíticas",
+    "transactions": "Transacciones",
+    "reports": "Reportes",
+    "settings": "Configuración",
+    "logout": "Cerrar Sesión",
+    "meetings": "Reuniones",
+    "events": "Eventos",
+    "courses": "Cursos",
+    "announcements": "Anuncios",
+    "audit_logs": "Registros de Auditoría"
+  },
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "refresh": "Actualizar"
+  },
+  "status": {
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "pending": "Pendiente",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Advertencia"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "language": {
+    "en": "Inglés",
+    "es": "Español"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "overview": {
+    "title": "Dashboard Overview",
+    "welcome": "Welcome back",
+    "lastLogin": "Last login"
+  },
+  "stats": {
+    "totalUsers": "Total Users",
+    "activeSubscriptions": "Active Subscriptions",
+    "monthlyRevenue": "Monthly Revenue",
+    "conversionRate": "Conversion Rate",
+    "newUsers": "New Users",
+    "churnRate": "Churn Rate"
+  },
+  "charts": {
+    "revenueOverTime": "Revenue Over Time",
+    "userGrowth": "User Growth",
+    "subscriptionDistribution": "Subscription Distribution",
+    "paymentMethods": "Payment Methods"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "addUser": "Add New User",
+    "createContent": "Create Content",
+    "viewReports": "View Reports",
+    "manageSubscriptions": "Manage Subscriptions"
+  },
+  "recentActivity": {
+    "title": "Recent Activity",
+    "userRegistered": "New user registered",
+    "subscriptionCreated": "Subscription created",
+    "paymentReceived": "Payment received",
+    "contentPublished": "Content published"
+  }
+}

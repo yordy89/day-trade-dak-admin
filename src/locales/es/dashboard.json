@@ -1,0 +1,35 @@
+{
+  "overview": {
+    "title": "Resumen del Panel",
+    "welcome": "Bienvenido de vuelta",
+    "lastLogin": "Último inicio de sesión"
+  },
+  "stats": {
+    "totalUsers": "Total de Usuarios",
+    "activeSubscriptions": "Suscripciones Activas",
+    "monthlyRevenue": "Ingresos Mensuales",
+    "conversionRate": "Tasa de Conversión",
+    "newUsers": "Nuevos Usuarios",
+    "churnRate": "Tasa de Cancelación"
+  },
+  "charts": {
+    "revenueOverTime": "Ingresos a lo Largo del Tiempo",
+    "userGrowth": "Crecimiento de Usuarios",
+    "subscriptionDistribution": "Distribución de Suscripciones",
+    "paymentMethods": "Métodos de Pago"
+  },
+  "quickActions": {
+    "title": "Acciones Rápidas",
+    "addUser": "Agregar Nuevo Usuario",
+    "createContent": "Crear Contenido",
+    "viewReports": "Ver Reportes",
+    "manageSubscriptions": "Gestionar Suscripciones"
+  },
+  "recentActivity": {
+    "title": "Actividad Reciente",
+    "userRegistered": "Nuevo usuario registrado",
+    "subscriptionCreated": "Suscripción creada",
+    "paymentReceived": "Pago recibido",
+    "contentPublished": "Contenido publicado"
+  }
+}
