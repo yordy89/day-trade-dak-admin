@@ -66,7 +66,7 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
     duration: 60,
     participants: [] as string[],
     isRecurring: isRecurring,
-    recurringType: 'daily',
+    recurringType: 'daily' as 'daily' | 'weekly' | 'monthly',
     recurringDays: [] as number[],
     recurringEndDate: null as Date | null,
     recurringTime: '09:00',
@@ -79,6 +79,7 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
     enableWaitingRoom: false,
     meetingType: 'other',
     hostId: '',
+    provider: 'zoom' as 'zoom' | 'videosdk' | 'livekit',
     // Subscription fields
     allowedSubscriptions: [] as string[],
     restrictedToSubscriptions: false,
@@ -102,6 +103,10 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
       newErrors.scheduledAt = t('validation.dateRequired', 'Date is required')
     }
     
+    if (!formData.hostId) {
+      newErrors.hostId = t('validation.hostRequired', 'Please select a meeting host')
+    }
+    
     if (formData.isRecurring) {
       if (formData.recurringType === 'weekly' && formData.recurringDays.length === 0) {
         newErrors.recurringDays = t('validation.selectDays', 'Select at least one day')
@@ -118,7 +123,10 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
     }
 
     try {
-      await createMeeting.mutateAsync(formData)
+      await createMeeting.mutateAsync({
+        ...formData,
+        recurringEndDate: formData.recurringEndDate || undefined
+      })
       toast.success(
         formData.isRecurring 
           ? t('messages.recurringMeetingCreated', 'Recurring meeting created successfully')
@@ -126,8 +134,15 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
       )
       onClose()
       resetForm()
-    } catch (error) {
-      toast.error(t('messages.error', 'Failed to create meeting'))
+    } catch (error: any) {
+      // Handle specific error messages from the API
+      const errorMessage = error?.response?.data?.message || error?.message || t('messages.error', 'Failed to create meeting')
+      toast.error(errorMessage)
+      
+      // If it's a validation error for hostId, set it in the form errors
+      if (errorMessage.toLowerCase().includes('host')) {
+        setErrors(prev => ({ ...prev, hostId: errorMessage }))
+      }
     }
   }
 
@@ -139,7 +154,7 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
       duration: 60,
       participants: [],
       isRecurring: false,
-      recurringType: 'daily',
+      recurringType: 'daily' as 'daily' | 'weekly' | 'monthly',
       recurringDays: [],
       recurringEndDate: null,
       recurringTime: '09:00',
@@ -152,6 +167,9 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
       enableWaitingRoom: false,
       meetingType: 'other',
       hostId: '',
+      provider: 'zoom' as 'zoom' | 'videosdk' | 'livekit',
+      allowedSubscriptions: [],
+      restrictedToSubscriptions: false,
     })
     setErrors({})
   }
@@ -173,13 +191,13 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
       description: 'Join our daily live trading session where we analyze the market and discuss trading strategies.',
       meetingType: 'daily_live',
       isRecurring: true,
-      recurringType: 'weekly',
+      recurringType: 'weekly' as 'daily' | 'weekly' | 'monthly',
       recurringDays: [1, 2, 3, 4, 5], // Monday to Friday
       recurringTime: '08:45',
       duration: 90,
       enableRecording: true,
       maxParticipants: 500,
-      hostId: '', // Will use current user as default
+      // Keep current hostId selection
     }))
   }
 
@@ -257,6 +275,24 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
                 </Select>
               </FormControl>
               <FormControl fullWidth>
+                <InputLabel>{t('fields.provider', 'Meeting Provider')}</InputLabel>
+                <Select
+                  value={formData.provider}
+                  label={t('fields.provider', 'Meeting Provider')}
+                  onChange={(e) => handleChange('provider', e.target.value)}
+                >
+                  <MenuItem value="zoom">{t('providers.zoom', 'Zoom')}</MenuItem>
+                  <MenuItem value="videosdk">{t('providers.videosdk', 'VideoSDK')}</MenuItem>
+                  <MenuItem value="livekit">{t('providers.livekit', 'LiveKit (Self-Hosted)')}</MenuItem>
+                </Select>
+                <FormHelperText>
+                  {formData.provider === 'livekit' 
+                    ? t('fields.providerHelperTextLiveKit', 'LiveKit is self-hosted on your own servers')
+                    : t('fields.providerHelperText', 'Select the video platform for this meeting')
+                  }
+                </FormHelperText>
+              </FormControl>
+              <FormControl fullWidth error={!!errors.hostId}>
                 <InputLabel>{t('fields.host', 'Meeting Host')}</InputLabel>
                 <Select
                   value={formData.hostId}
@@ -264,9 +300,10 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
                   onChange={(e) => handleChange('hostId', e.target.value)}
                   displayEmpty
                   disabled={hostsLoading}
+                  required
                 >
-                  <MenuItem value="">
-                    <em>{t('fields.defaultHost', 'Use current user (default)')}</em>
+                  <MenuItem value="" disabled>
+                    <em>{t('fields.selectHost', 'Select a host')}</em>
                   </MenuItem>
                   {hostsLoading && (
                     <MenuItem disabled>
@@ -302,7 +339,7 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
                   )}
                 </Select>
                 <FormHelperText>
-                  {t('fields.hostHelperText', 'Select an admin user to host this meeting. Only admins and super-admins can host meetings.')}
+                  {errors.hostId || t('fields.hostHelperText', 'Select an admin user to host this meeting. Only admins and super-admins can host meetings.')}
                 </FormHelperText>
               </FormControl>
             </Box>
@@ -363,7 +400,6 @@ export function CreateMeetingDialog({ open, onClose, isRecurring = false }: Crea
                         value={formData.recurringDays}
                         onChange={(e, value) => handleChange('recurringDays', value)}
                         aria-label="weekdays"
-                        multiple
                         size="small"
                       >
                         {weekDays.map(day => (

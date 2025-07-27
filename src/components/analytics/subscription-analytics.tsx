@@ -33,7 +33,7 @@ export function SubscriptionAnalytics({ startDate, endDate, currency }: Subscrip
 
   // Sample data - replace with real data from API
   // TODO: Replace with actual data from stats when API returns growth data
-  const growthData = stats?.growthData || [
+  const growthData = [
     { month: 'Jan', newSubscriptions: 120, cancellations: 15, netGrowth: 105 },
     { month: 'Feb', newSubscriptions: 145, cancellations: 22, netGrowth: 123 },
     { month: 'Mar', newSubscriptions: 168, cancellations: 18, netGrowth: 150 },
@@ -43,7 +43,7 @@ export function SubscriptionAnalytics({ startDate, endDate, currency }: Subscrip
   ]
 
   // TODO: Replace with actual data from stats when API returns MRR trend data
-  const mrrData = stats?.mrrData || [
+  const mrrData = [
     { month: 'Jan', mrr: 45000, growth: 5.2 },
     { month: 'Feb', mrr: 52000, growth: 15.6 },
     { month: 'Mar', mrr: 58000, growth: 11.5 },
@@ -184,13 +184,11 @@ export function SubscriptionAnalytics({ startDate, endDate, currency }: Subscrip
                         p: 1.5,
                         borderRadius: 2,
                         bgcolor: alpha(
-                          theme.palette[kpi.color as any]?.main || 
-                          theme.palette[kpi.color as any]?.[500] || 
+                          (theme.palette[kpi.color as keyof typeof theme.palette] as any)?.main || 
                           theme.palette.grey[500], 
                           0.1
                         ),
-                        color: theme.palette[kpi.color as any]?.main || 
-                          theme.palette[kpi.color as any]?.[500] || 
+                        color: (theme.palette[kpi.color as keyof typeof theme.palette] as any)?.main || 
                           theme.palette.grey[500],
                       }}
                     >

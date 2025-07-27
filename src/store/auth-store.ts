@@ -2,9 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import API from '@/lib/axios';
 import { enqueueSnackbar } from 'notistack';
+import { usePermissionStore } from './permission-store';
 
 interface AdminUser {
-  id: string;
+  _id?: string;
+  id?: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -59,6 +61,13 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
           
+          // Fetch user permissions
+          const permissionStore = usePermissionStore.getState();
+          const userId = user._id || user.id;
+          if (userId) {
+            await permissionStore.fetchPermissions(userId, user.role);
+          }
+          
           enqueueSnackbar('Welcome back!', { variant: 'success' });
         } catch (error: any) {
           set({ isLoading: false });
@@ -79,6 +88,10 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           isAuthenticated: false,
         });
+        
+        // Clear permissions
+        const permissionStore = usePermissionStore.getState();
+        permissionStore.clearPermissions();
         
         // Redirect to login
         window.location.href = '/auth/login';
@@ -111,6 +124,13 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
+          
+          // Fetch user permissions
+          const permissionStore = usePermissionStore.getState();
+          const userId = response.data._id || response.data.id;
+          if (userId) {
+            await permissionStore.fetchPermissions(userId, response.data.role);
+          }
         } catch (error) {
           console.error('Auth check failed:', error);
           get().logout();

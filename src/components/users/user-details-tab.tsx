@@ -66,7 +66,7 @@ export function UserDetailsTab({ user }: UserDetailsTabProps) {
               {displayName}
             </Typography>
             <Chip 
-              label={t(`roles.${user.role}`, user.role)} 
+              label={String(t(`roles.${user.role}`, user.role))} 
               color={config.color}
               icon={config.icon}
               variant={user.role === 'user' ? 'outlined' : 'filled'}

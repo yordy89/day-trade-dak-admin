@@ -77,7 +77,7 @@ export function MeetingsTable({ searchQuery, filters }: MeetingsTableProps) {
     search: searchQuery,
     ...filters,
     sortBy: sortModel[0]?.field,
-    sortOrder: sortModel[0]?.sort,
+    sortOrder: sortModel[0]?.sort as 'asc' | 'desc' | undefined,
   })
 
   const handleAction = async (action: string, meeting: any) => {
@@ -354,7 +354,7 @@ export function MeetingsTable({ searchQuery, filters }: MeetingsTableProps) {
         return (
           <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
             <Chip 
-            label={t(`status.${params.row.status}`, params.row.status).toUpperCase()} 
+            label={String(t(`status.${params.row.status}`, params.row.status)).toUpperCase()} 
             size="small"
             sx={{
               fontWeight: 600,
@@ -546,9 +546,6 @@ export function MeetingsTable({ searchQuery, filters }: MeetingsTableProps) {
             borderRadius: 2,
             minWidth: 'max-content',
           },
-          '& .MuiDataGrid-virtualScroller': {
-            overflowX: 'auto',
-          },
           '& .MuiDataGrid-cell:focus': {
             outline: 'none',
           },
@@ -588,6 +585,7 @@ export function MeetingsTable({ searchQuery, filters }: MeetingsTableProps) {
             display: 'none',
           },
           '& .MuiDataGrid-virtualScroller': {
+            overflowX: 'auto',
             '&::-webkit-scrollbar': {
               width: 8,
               height: 8,

@@ -7,6 +7,11 @@ export interface User {
   lastName?: string
   fullName?: string
   profileImage?: string
+  phone?: string
+  bio?: string
+  city?: string
+  country?: string
+  allowLiveMeetingAccess?: boolean
   role: string
   status: string
   subscriptions: Array<{

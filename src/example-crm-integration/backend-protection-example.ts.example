@@ -1,0 +1,108 @@
+// Example: How to protect routes in the backend API
+
+// In your controller (e.g., videos.controller.ts)
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../guards/jwt-auth-guard';
+import { ModuleAccessGuard } from '../guards/module-access.guard';
+import { RequireModule } from '../decorators/require-module.decorator';
+import { ModuleType } from '../module-permissions/module-permission.schema';
+
+@Controller('content')
+@UseGuards(JwtAuthGuard) // Require authentication
+export class ContentController {
+  
+  // Protect a route with module access
+  @Get('classes/:id')
+  @UseGuards(ModuleAccessGuard)
+  @RequireModule(ModuleType.CLASSES)
+  async getClassVideo(@Param('id') id: string) {
+    // Only users with CLASSES access can reach here
+    return this.contentService.getVideo(id);
+  }
+
+  // Another example
+  @Get('psicotrading/:id')
+  @UseGuards(ModuleAccessGuard)
+  @RequireModule(ModuleType.PSICOTRADING)
+  async getPsicotradingContent(@Param('id') id: string) {
+    // Access granted if:
+    // 1. User is super_admin
+    // 2. User has psicotrading module permission
+    // 3. User has active psicotrading subscription
+    return this.contentService.getPsicotradingContent(id);
+  }
+
+  // Protect multiple endpoints
+  @Get('masterclass/:id')
+  @UseGuards(ModuleAccessGuard)
+  @RequireModule(ModuleType.MASTER_CLASSES)
+  async getMasterClass(@Param('id') id: string) {
+    return this.contentService.getMasterClass(id);
+  }
+}
+
+// Example: Service method to check access programmatically
+export class ContentService {
+  constructor(
+    private modulePermissionsService: ModulePermissionsService,
+    private subscriptionsService: SubscriptionsService,
+  ) {}
+
+  async canUserAccessContent(userId: string, moduleType: ModuleType): Promise<boolean> {
+    // Check if user has module permission
+    const hasPermission = await this.modulePermissionsService.hasModuleAccess(
+      userId,
+      moduleType
+    );
+
+    if (hasPermission) {
+      return true;
+    }
+
+    // Check if user has active subscription
+    const user = await this.usersService.findById(userId);
+    const hasSubscription = this.checkUserSubscription(user, moduleType);
+
+    return hasSubscription;
+  }
+
+  private checkUserSubscription(user: User, moduleType: ModuleType): boolean {
+    // Map module types to subscription plans
+    const moduleToSubscriptionMap: Record<ModuleType, string[]> = {
+      [ModuleType.CLASSES]: ['Classes'],
+      [ModuleType.MASTER_CLASSES]: ['MasterClases'],
+      [ModuleType.LIVE_RECORDED]: ['LiveRecorded'],
+      [ModuleType.PSICOTRADING]: ['Psicotrading'],
+      [ModuleType.PEACE_WITH_MONEY]: ['PeaceWithMoney'],
+      [ModuleType.LIVE_WEEKLY]: ['LiveWeeklyManual', 'LiveWeeklyRecurring'],
+      [ModuleType.COMMUNITY_EVENTS]: ['CommunityEvent'],
+      [ModuleType.VIP_EVENTS]: ['VipEvent'],
+      [ModuleType.MASTER_COURSE]: ['MasterCourse'],
+    };
+
+    const requiredPlans = moduleToSubscriptionMap[moduleType];
+    if (!requiredPlans) return false;
+
+    // Check active subscriptions
+    return user.subscriptions.some(sub => {
+      if (sub.expiresAt && new Date(sub.expiresAt) < new Date()) {
+        return false; // Expired
+      }
+      return requiredPlans.includes(sub.plan);
+    });
+  }
+}
+
+// Example: Custom decorator for multiple modules
+export function RequireAnyModule(...modules: ModuleType[]) {
+  return SetMetadata('requiredModules', modules);
+}
+
+// Usage:
+@Get('special-content/:id')
+@UseGuards(ModuleAccessGuard)
+@RequireAnyModule(ModuleType.MASTER_CLASSES, ModuleType.VIP_EVENTS)
+async getSpecialContent(@Param('id') id: string) {
+  // User needs access to either MASTER_CLASSES OR VIP_EVENTS
+  return this.contentService.getSpecialContent(id);
+}

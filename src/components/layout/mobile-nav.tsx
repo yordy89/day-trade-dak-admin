@@ -58,7 +58,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                 </div>
               </Transition.Child>
               
-              <Sidebar />
+              <Sidebar open={open} onClose={onClose} />
             </Dialog.Panel>
           </Transition.Child>
         </div>

@@ -105,13 +105,11 @@ export function RecentActivity() {
                         width: 40,
                         height: 40,
                         bgcolor: alpha(
-                          theme.palette[activity.color as any]?.main || 
-                          theme.palette[activity.color as any]?.[500] || 
+                          (theme.palette[activity.color as keyof typeof theme.palette] as any)?.main || 
                           theme.palette.grey[500], 
                           0.1
                         ),
-                        color: theme.palette[activity.color as any]?.main || 
-                          theme.palette[activity.color as any]?.[500] || 
+                        color: (theme.palette[activity.color as keyof typeof theme.palette] as any)?.main || 
                           theme.palette.grey[500],
                       }}
                     >

@@ -1,0 +1,151 @@
+// Example: Protected Route in DayTradeDakCRM
+
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useModuleAccess, ModuleType } from './module-access-hook';
+
+/**
+ * Example of a protected page component
+ */
+export default function MasterClassesPage() {
+  const router = useRouter();
+  const { hasAccess, loading } = useModuleAccess(ModuleType.MASTER_CLASSES);
+
+  useEffect(() => {
+    // Redirect if no access after loading
+    if (!loading && !hasAccess) {
+      router.push('/subscription-required');
+    }
+  }, [loading, hasAccess, router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return null; // Will redirect
+  }
+
+  return (
+    <div>
+      <h1>Master Classes</h1>
+      {/* Your protected content here */}
+    </div>
+  );
+}
+
+/**
+ * Example: Video Player with Module Access Check
+ */
+export function ProtectedVideoPlayer({ videoId, moduleType }: { videoId: string; moduleType: ModuleType }) {
+  const { hasAccess, loading } = useModuleAccess(moduleType);
+
+  if (loading) {
+    return <div>Verificando acceso...</div>;
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="bg-gray-100 p-8 rounded-lg text-center">
+        <h3 className="text-xl font-semibold mb-4">Contenido Restringido</h3>
+        <p className="text-gray-600 mb-6">
+          Necesitas una suscripción activa o permisos especiales para ver este contenido.
+        </p>
+        <button 
+          className="bg-primary text-white px-6 py-2 rounded-lg"
+          onClick={() => window.location.href = '/planes'}
+        >
+          Ver Planes Disponibles
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <video controls className="w-full">
+      <source src={`/api/videos/${videoId}`} type="video/mp4" />
+    </video>
+  );
+}
+
+/**
+ * Example: Menu Item with Access Check
+ */
+export function NavigationMenu() {
+  const classesAccess = useModuleAccess(ModuleType.CLASSES);
+  const masterClassesAccess = useModuleAccess(ModuleType.MASTER_CLASSES);
+  const psicotradingAccess = useModuleAccess(ModuleType.PSICOTRADING);
+
+  return (
+    <nav>
+      <ul>
+        <li>
+          <a href="/dashboard">Dashboard</a>
+        </li>
+        
+        {classesAccess.hasAccess && (
+          <li>
+            <a href="/classes">Clases</a>
+          </li>
+        )}
+        
+        {masterClassesAccess.hasAccess && (
+          <li>
+            <a href="/master-classes">Master Classes</a>
+          </li>
+        )}
+        
+        {psicotradingAccess.hasAccess && (
+          <li>
+            <a href="/psicotrading">Psicotrading</a>
+          </li>
+        )}
+      </ul>
+    </nav>
+  );
+}
+
+/**
+ * Example: Content List with Mixed Access
+ */
+export function CourseList() {
+  const modules = [
+    { id: 1, title: 'Introducción al Trading', moduleType: ModuleType.CLASSES },
+    { id: 2, title: 'Estrategias Avanzadas', moduleType: ModuleType.MASTER_CLASSES },
+    { id: 3, title: 'Psicología del Trading', moduleType: ModuleType.PSICOTRADING },
+  ];
+
+  return (
+    <div className="grid gap-4">
+      {modules.map(course => (
+        <CourseCard key={course.id} course={course} />
+      ))}
+    </div>
+  );
+}
+
+function CourseCard({ course }: { course: { id: number; title: string; moduleType: ModuleType } }) {
+  const { hasAccess, loading } = useModuleAccess(course.moduleType);
+
+  return (
+    <div className="border rounded-lg p-4">
+      <h3 className="text-lg font-semibold">{course.title}</h3>
+      
+      {loading ? (
+        <p className="text-gray-500">Verificando acceso...</p>
+      ) : hasAccess ? (
+        <button className="mt-2 bg-primary text-white px-4 py-2 rounded">
+          Ver Curso
+        </button>
+      ) : (
+        <button className="mt-2 bg-gray-300 text-gray-600 px-4 py-2 rounded" disabled>
+          🔒 Requiere Suscripción
+        </button>
+      )}
+    </div>
+  );
+}

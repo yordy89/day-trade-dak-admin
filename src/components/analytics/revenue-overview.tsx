@@ -82,7 +82,7 @@ export function RevenueOverview({ startDate, endDate, currency }: RevenueOvervie
 
   // Sample data for charts - replace with real data from API
   // TODO: Replace with actual data from stats when API returns revenue trend data
-  const revenueData = stats?.revenueData || [
+  const revenueData = [
     { date: 'Jan 1', revenue: 12500, transactions: 45 },
     { date: 'Jan 7', revenue: 15300, transactions: 52 },
     { date: 'Jan 14', revenue: 18200, transactions: 61 },
@@ -91,14 +91,14 @@ export function RevenueOverview({ startDate, endDate, currency }: RevenueOvervie
   ]
 
   // TODO: Replace with actual data from stats when API returns plan distribution
-  const planDistribution = stats?.planDistribution || [
+  const planDistribution = [
     { name: 'Basic', value: 450, color: theme.palette.primary.main },
     { name: 'Pro', value: 320, color: theme.palette.secondary.main },
     { name: 'Enterprise', value: 180, color: theme.palette.success.main },
   ]
 
   // TODO: Replace with actual data from stats when API returns payment method distribution
-  const paymentMethods = stats?.paymentMethods || [
+  const paymentMethods = [
     { method: 'Credit Card', amount: 65000, percentage: 65 },
     { method: 'PayPal', amount: 25000, percentage: 25 },
     { method: 'Bank Transfer', amount: 10000, percentage: 10 },
@@ -183,13 +183,11 @@ export function RevenueOverview({ startDate, endDate, currency }: RevenueOvervie
                         p: 1.5,
                         borderRadius: 2,
                         bgcolor: alpha(
-                          theme.palette[metric.color as any]?.main || 
-                          theme.palette[metric.color as any]?.[500] || 
+                          (theme.palette[metric.color as keyof typeof theme.palette] as any)?.main || 
                           theme.palette.grey[500], 
                           0.1
                         ),
-                        color: theme.palette[metric.color as any]?.main || 
-                          theme.palette[metric.color as any]?.[500] || 
+                        color: (theme.palette[metric.color as keyof typeof theme.palette] as any)?.main || 
                           theme.palette.grey[500],
                       }}
                     >

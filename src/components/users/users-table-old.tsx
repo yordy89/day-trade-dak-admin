@@ -63,7 +63,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     search: searchQuery,
     ...filters,
     sortBy: sortModel[0]?.field,
-    sortOrder: sortModel[0]?.sort,
+    sortOrder: sortModel[0]?.sort as 'asc' | 'desc' | undefined,
   })
 
   const handleAction = (action: string, user: any) => {
@@ -161,7 +161,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
         }
         return (
           <Chip 
-            label={t(`roles.${params.value}`, params.value)} 
+            label={String(t(`roles.${params.value}`, params.value))} 
             size="small"
             color={roleColors[params.value] || 'default'}
           />

@@ -1,113 +1,164 @@
-import { api } from '@/lib/api-client'
-import { Event, EventRegistration, EventFilters, EventStatistics } from '@/types/event'
+import apiClient from '@/lib/api-client';
+
+export interface Event {
+  _id: string;
+  title: string;
+  description?: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  location?: string;
+  type: 'master_course' | 'community_event' | 'workshop' | 'webinar';
+  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  capacity?: number;
+  registrations?: number;
+  price?: number;
+  vipPrice?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventRegistration {
+  _id: string;
+  eventId: string;
+  user: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
+  ticketType: 'regular' | 'vip';
+  status: 'pending' | 'confirmed' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'failed';
+  paymentAmount: number;
+  stripePaymentIntentId?: string;
+  registrationDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface EventsResponse {
-  data?: Event[]
-  events?: Event[]
-  total?: number
-  page?: number
-  totalPages?: number
-  pagination?: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
+  events: Event[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
-export interface RegistrationsResponse {
-  data: EventRegistration[]
-  total: number
-  page: number
-  totalPages: number
+export interface EventRegistrationsResponse {
+  registrations: EventRegistration[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
-export class EventService {
-  async getEvents(filters?: EventFilters): Promise<EventsResponse> {
-    const params = new URLSearchParams()
-    
-    if (filters) {
-      if (filters.page) params.append('page', filters.page.toString())
-      if (filters.limit) params.append('limit', filters.limit.toString())
-      if (filters.search) params.append('search', filters.search)
-      if (filters.type) params.append('type', filters.type)
-      if (filters.status) params.append('status', filters.status)
-      if (filters.startDate) params.append('startDate', filters.startDate)
-      if (filters.endDate) params.append('endDate', filters.endDate)
-      if (filters.sortBy) params.append('sortBy', filters.sortBy)
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
+interface GetEventsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+class EventService {
+  async getEvents(params: GetEventsParams = {}): Promise<EventsResponse> {
+    try {
+      // Filter out empty string parameters
+      const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as any);
+      
+      const response = await apiClient.get('/admin/events', { params: cleanParams });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      return { events: [], total: 0, page: 1, limit: 10 };
     }
-
-    const response = await api.get(`/admin/events?${params.toString()}`)
-    return response.data
   }
 
-  async getEvent(id: string): Promise<Event> {
-    const response = await api.get(`/admin/events/${id}`)
-    return response.data
+  async getEvent(eventId: string): Promise<Event> {
+    const response = await apiClient.get(`/admin/events/${eventId}`);
+    return response.data;
   }
 
-  async createEvent(data: Partial<Event>): Promise<Event> {
-    const response = await api.post('/admin/events', data)
-    return response.data
+  async getEventById(eventId: string): Promise<Event> {
+    return this.getEvent(eventId);
   }
 
-  async updateEvent(id: string, data: Partial<Event>): Promise<Event> {
-    const response = await api.patch(`/admin/events/${id}`, data)
-    return response.data
-  }
-
-  async deleteEvent(id: string): Promise<void> {
-    await api.delete(`/admin/events/${id}`)
+  async getEventStatistics(eventId: string): Promise<any> {
+    const response = await apiClient.get(`/admin/events/${eventId}/statistics`);
+    return response.data;
   }
 
   async getEventRegistrations(
     eventId: string,
-    filters?: {
-      page?: number
-      limit?: number
-      search?: string
-      paymentStatus?: string
+    params: { page?: number; limit?: number; search?: string; paymentStatus?: string; status?: string } = {}
+  ): Promise<EventRegistrationsResponse> {
+    try {
+      // Filter out empty string parameters
+      const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as any);
+      
+      const response = await apiClient.get(`/admin/events/${eventId}/registrations`, { params: cleanParams });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching event registrations:', error);
+      return { registrations: [], total: 0, page: 1, limit: 10 };
     }
-  ): Promise<RegistrationsResponse> {
-    const params = new URLSearchParams()
-    
-    if (filters) {
-      if (filters.page) params.append('page', filters.page.toString())
-      if (filters.limit) params.append('limit', filters.limit.toString())
-      if (filters.search) params.append('search', filters.search)
-      if (filters.paymentStatus) params.append('paymentStatus', filters.paymentStatus)
-    }
-
-    const response = await api.get(`/admin/events/${eventId}/registrations?${params.toString()}`)
-    return response.data
   }
 
-  async getEventStatistics(eventId: string): Promise<EventStatistics> {
-    const response = await api.get(`/admin/events/${eventId}/statistics`)
-    return response.data
+  async createEvent(data: Partial<Event>): Promise<Event> {
+    const response = await apiClient.post('/admin/events', data);
+    return response.data;
   }
 
-  async exportRegistrations(
+  async updateEvent(eventId: string, data: Partial<Event>): Promise<Event> {
+    const response = await apiClient.patch(`/admin/events/${eventId}`, data);
+    return response.data;
+  }
+
+  async deleteEvent(eventId: string): Promise<void> {
+    await apiClient.delete(`/admin/events/${eventId}`);
+  }
+
+  async updateRegistrationStatus(
     eventId: string,
-    format: 'csv' | 'excel' | 'pdf'
-  ): Promise<Blob> {
-    const response = await api.post(
-      `/admin/events/${eventId}/export-registrations`,
-      { format },
-      { responseType: 'blob' }
-    )
-    return response.data
+    registrationId: string,
+    status: string
+  ): Promise<EventRegistration> {
+    const response = await apiClient.patch(
+      `/admin/events/${eventId}/registrations/${registrationId}/status`,
+      { status }
+    );
+    return response.data;
   }
 
-  async toggleEventStatus(id: string): Promise<Event> {
-    const response = await api.patch(`/admin/events/${id}/toggle-status`)
-    return response.data
+  async exportRegistrations(eventId: string, format: 'csv' | 'excel' | 'pdf' = 'excel'): Promise<Blob> {
+    const response = await apiClient.post(`/admin/events/${eventId}/export-registrations`, 
+      { format, filters: {} },
+      { responseType: 'blob' }
+    );
+    return response.data;
+  }
+
+  async toggleFeaturedStatus(eventId: string): Promise<Event> {
+    const response = await apiClient.patch(`/admin/events/${eventId}/toggle-featured`);
+    return response.data.event;
+  }
+
+  async setAsFeatured(eventId: string): Promise<Event> {
+    const response = await apiClient.patch(`/admin/events/${eventId}/set-featured`);
+    return response.data.event;
   }
 }
 
-// Export singleton instance
-export const eventService = new EventService()
-
-// Export hook for easy use in components
-export const useEventService = () => eventService
+export const eventService = new EventService();

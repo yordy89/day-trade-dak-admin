@@ -54,7 +54,7 @@ export function PaymentTransactions({ startDate, endDate, currency }: PaymentTra
     status: statusFilter !== 'all' ? statusFilter : undefined,
     method: methodFilter !== 'all' ? methodFilter : undefined,
     sortBy: sortModel[0]?.field,
-    sortOrder: sortModel[0]?.sort,
+    sortOrder: sortModel[0]?.sort === null ? undefined : sortModel[0]?.sort,
   })
 
   // Debug logging
@@ -68,7 +68,7 @@ export function PaymentTransactions({ startDate, endDate, currency }: PaymentTra
     status: statusFilter !== 'all' ? statusFilter : undefined,
     method: methodFilter !== 'all' ? methodFilter : undefined,
     sortBy: sortModel[0]?.field,
-    sortOrder: sortModel[0]?.sort,
+    sortOrder: sortModel[0]?.sort === null ? undefined : sortModel[0]?.sort,
   })
   console.log('PaymentTransactions - Data:', data)
   console.log('PaymentTransactions - Loading:', isLoading)
@@ -140,7 +140,7 @@ export function PaymentTransactions({ startDate, endDate, currency }: PaymentTra
         return (
           <Box display="flex" alignItems="center" gap={1}>
             <span>{methodIcons[params.value] || '💰'}</span>
-            {t(`paymentMethods.${params.value}`, params.value)}
+            {String(t(`paymentMethods.${params.value}`, params.value))}
           </Box>
         )
       },
@@ -158,7 +158,7 @@ export function PaymentTransactions({ startDate, endDate, currency }: PaymentTra
         }
         return (
           <Chip 
-            label={t(`transactionStatus.${params.value}`, params.value)} 
+            label={String(t(`transactionStatus.${params.value}`, params.value))} 
             size="small"
             color={statusColors[params.value] || 'default'}
           />
@@ -175,7 +175,7 @@ export function PaymentTransactions({ startDate, endDate, currency }: PaymentTra
       field: 'createdAt',
       headerName: t('columns.date', 'Date'),
       width: 180,
-      valueFormatter: (params) => formatDateTime(new Date(params.value)),
+      valueFormatter: (params: any) => formatDateTime(new Date(params.value)),
     },
     {
       field: 'actions',

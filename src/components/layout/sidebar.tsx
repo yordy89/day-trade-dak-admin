@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
+import { features } from '@/config/features'
 import {
   Box,
   Drawer,
@@ -34,27 +35,39 @@ import {
   Event,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/store/auth-store'
+import { usePermissionStore } from '@/store/permission-store'
+import { Shield } from '@mui/icons-material'
 
 const drawerWidth = 280
 
-const navigation = [
-  { name: 'dashboard', href: '/', icon: Dashboard },
-  { name: 'users', href: '/users', icon: People },
-  { name: 'subscriptions', href: '/subscriptions', icon: CreditCard },
-  { name: 'payments', href: '/payments', icon: AttachMoney },
-  { name: 'meetings', href: '/meetings', icon: VideoCall },
-  { name: 'events', href: '/events', icon: Event },
-  { name: 'content', href: '/content', icon: ContentPaste },
-  { name: 'courses', href: '/courses', icon: School },
-  { name: 'announcements', href: '/announcements', icon: Campaign },
-  { name: 'analytics', href: '/analytics', icon: BarChart },
-  { name: 'transactions', href: '/transactions', icon: AttachMoney },
-  { name: 'reports', href: '/reports', icon: ContentPaste },
+interface NavigationItem {
+  name: string
+  href: string
+  icon: any
+  permission?: string
+  featureFlag?: keyof typeof features
+}
+
+const navigation: NavigationItem[] = [
+  { name: 'dashboard', href: '/', icon: Dashboard, permission: 'dashboard' },
+  { name: 'users', href: '/users', icon: People, permission: 'users' },
+  { name: 'subscriptions', href: '/subscriptions', icon: CreditCard, permission: 'subscriptions' },
+  { name: 'payments', href: '/payments', icon: AttachMoney, permission: 'payments' },
+  { name: 'meetings', href: '/meetings', icon: VideoCall, permission: 'meetings', featureFlag: 'meetings' },
+  { name: 'events', href: '/events', icon: Event, permission: 'events' },
+  { name: 'content', href: '/content', icon: ContentPaste, permission: 'content' },
+  { name: 'courses', href: '/courses', icon: School, permission: 'courses' },
+  { name: 'announcements', href: '/announcements', icon: Campaign, permission: 'announcements' },
+  { name: 'analytics', href: '/analytics', icon: BarChart, permission: 'analytics' },
+  { name: 'transactions', href: '/transactions', icon: AttachMoney, permission: 'transactions' },
+  { name: 'reports', href: '/reports', icon: ContentPaste, permission: 'reports' },
 ]
 
-const bottomNavigation = [
-  { name: 'settings', href: '/settings', icon: Settings },
-  { name: 'audit_logs', href: '/audit-logs', icon: Security },
+const bottomNavigation: NavigationItem[] = [
+  { name: 'settings', href: '/settings', icon: Settings, permission: 'settings' },
+  { name: 'audit_logs', href: '/audit-logs', icon: Security, permission: 'auditLogs' },
+  { name: 'permissions', href: '/permissions', icon: Shield, permission: 'permissions' },
+  { name: 'module_permissions', href: '/module-permissions', icon: Security, permission: 'permissions' },
 ]
 
 interface SidebarProps {
@@ -69,6 +82,32 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const { t } = useTranslation('common')
   const { user, logout } = useAuthStore()
+  const { hasPermission, permissions } = usePermissionStore()
+  
+  // Filter navigation items based on permissions and feature flags
+  const visibleNavigation = navigation.filter((item) => {
+    // Check feature flag first
+    if (item.featureFlag) {
+      const feature = features[item.featureFlag]
+      if (!feature || !feature.enabled) return false
+    }
+    
+    if (!item.permission) return true
+    // Super admin sees everything
+    if (user?.role === 'super_admin') return true
+    // If permissions not loaded yet, hide items that require permissions
+    if (!permissions && item.permission) return false
+    return hasPermission(item.permission as any)
+  })
+  
+  const visibleBottomNavigation = bottomNavigation.filter((item) => {
+    if (!item.permission) return true
+    // Super admin sees everything
+    if (user?.role === 'super_admin') return true
+    // If permissions not loaded yet, hide items that require permissions
+    if (!permissions && item.permission) return false
+    return hasPermission(item.permission as any)
+  })
 
   const handleLogout = () => {
     logout()
@@ -138,7 +177,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Main Navigation */}
       <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
         <List>
-          {navigation.map((item) => {
+          {visibleNavigation.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
             
@@ -187,7 +226,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       <Box sx={{ p: 2 }}>
         <Divider sx={{ mb: 2 }} />
         <List>
-          {bottomNavigation.map((item) => {
+          {visibleBottomNavigation.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
             

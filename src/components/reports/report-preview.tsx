@@ -17,8 +17,8 @@ import {
   Chip
 } from '@mui/material'
 import { 
-  TrendingUp, 
-  TrendingDown, 
+  TrendUp, 
+  TrendDown, 
   Minus,
   Calendar,
   FileText
@@ -65,8 +65,8 @@ export function ReportPreview({ reportName, dateRange, data }: ReportPreviewProp
   }
 
   const getChangeIcon = (change: number) => {
-    if (change > 0) return <TrendingUp size={16} />
-    if (change < 0) return <TrendingDown size={16} />
+    if (change > 0) return <TrendUp size={16} />
+    if (change < 0) return <TrendDown size={16} />
     return <Minus size={16} />
   }
 

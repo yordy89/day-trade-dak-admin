@@ -18,7 +18,9 @@
     "events": "Eventos",
     "courses": "Cursos",
     "announcements": "Anuncios",
-    "audit_logs": "Registros de Auditoría"
+    "audit_logs": "Registros de Auditoría",
+    "permissions": "Permisos",
+    "module_permissions": "Permisos de Módulos"
   },
   "actions": {
     "save": "Guardar",

@@ -99,3 +99,17 @@ export const stormGrey = {
 export const principal = {
   50: '#42495a',
 };
+
+export const darkGreen = {
+  50: '#e6f4ea',
+  100: '#c3e5d0',
+  200: '#9cd4b2',
+  300: '#70c291',
+  400: '#4caf76',
+  500: '#1e9d5a',
+  600: '#198c51',
+  700: '#137845',
+  800: '#0e6539',
+  900: '#0a4d2c',
+  950: '#052319',
+};

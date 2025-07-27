@@ -1,0 +1,364 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Avatar,
+  Stack,
+  Chip,
+  Switch,
+  FormControlLabel,
+  Button,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Tooltip,
+  LinearProgress,
+} from '@mui/material'
+import { 
+  Shield, 
+  RestartAlt, 
+  Save,
+  Person,
+  SupervisorAccount,
+} from '@mui/icons-material'
+import { AdminLayout } from '@/components/layout/admin-layout'
+import { PageHeader } from '@/components/page-header'
+import { usePermissionService } from '@/services/permission.service'
+import { useSnackbar } from '@/hooks/use-snackbar'
+import { AdminUserWithPermissions, PermissionSet } from '@/types/permission'
+
+const permissionLabels: Record<keyof PermissionSet, string> = {
+  dashboard: 'Dashboard',
+  users: 'Usuarios',
+  subscriptions: 'Suscripciones',
+  payments: 'Pagos',
+  meetings: 'Reuniones',
+  events: 'Eventos',
+  content: 'Contenido',
+  courses: 'Cursos',
+  announcements: 'Anuncios',
+  analytics: 'Analítica',
+  transactions: 'Transacciones',
+  reports: 'Reportes',
+  settings: 'Configuración',
+  auditLogs: 'Logs de Auditoría',
+  permissions: 'Permisos',
+}
+
+const permissionGroups = [
+  {
+    title: 'Gestión General',
+    permissions: ['dashboard', 'users', 'settings'] as (keyof PermissionSet)[],
+  },
+  {
+    title: 'Suscripciones y Pagos',
+    permissions: ['subscriptions', 'payments', 'transactions'] as (keyof PermissionSet)[],
+  },
+  {
+    title: 'Contenido y Educación',
+    permissions: ['content', 'courses', 'meetings', 'events'] as (keyof PermissionSet)[],
+  },
+  {
+    title: 'Comunicación y Análisis',
+    permissions: ['announcements', 'analytics', 'reports'] as (keyof PermissionSet)[],
+  },
+  {
+    title: 'Administración',
+    permissions: ['auditLogs', 'permissions'] as (keyof PermissionSet)[],
+  },
+]
+
+export default function PermissionsPage() {
+  const permissionService = usePermissionService()
+  const { showSuccess, showError } = useSnackbar()
+  
+  const [admins, setAdmins] = useState<AdminUserWithPermissions[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedUser, setSelectedUser] = useState<AdminUserWithPermissions | null>(null)
+  const [editedPermissions, setEditedPermissions] = useState<PermissionSet | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+
+  const fetchAdmins = async () => {
+    try {
+      setLoading(true)
+      const data = await permissionService.getAllAdminPermissions()
+      setAdmins(data)
+    } catch (error) {
+      showError('Error al cargar los permisos')
+      console.error('Error fetching permissions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAdmins()
+  }, [])
+
+  const handleUserSelect = (user: AdminUserWithPermissions) => {
+    setSelectedUser(user)
+    setEditedPermissions({ ...user.permissions })
+  }
+
+  const handlePermissionChange = (permission: keyof PermissionSet, checked: boolean) => {
+    if (!editedPermissions) return
+    
+    setEditedPermissions({
+      ...editedPermissions,
+      [permission]: checked,
+    })
+  }
+
+  const handleSave = async () => {
+    if (!selectedUser || !editedPermissions) return
+    
+    try {
+      setIsSaving(true)
+      await permissionService.updateUserPermissions(selectedUser._id, editedPermissions)
+      showSuccess('Permisos actualizados exitosamente')
+      fetchAdmins()
+    } catch (error: any) {
+      showError(error.message || 'Error al actualizar permisos')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleReset = async () => {
+    if (!selectedUser) return
+    
+    try {
+      setIsSaving(true)
+      await permissionService.resetUserPermissions(selectedUser._id)
+      showSuccess('Permisos restablecidos exitosamente')
+      setResetDialogOpen(false)
+      fetchAdmins()
+      handleUserSelect(selectedUser)
+    } catch (error: any) {
+      showError(error.message || 'Error al restablecer permisos')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const hasChanges = () => {
+    if (!selectedUser || !editedPermissions) return false
+    
+    return Object.keys(editedPermissions).some(
+      (key) => editedPermissions[key as keyof PermissionSet] !== selectedUser.permissions[key as keyof PermissionSet]
+    )
+  }
+
+  return (
+    <AdminLayout>
+      <Box>
+        <PageHeader
+          title="Gestión de Permisos"
+          subtitle="Administra los permisos de acceso para usuarios administradores"
+        />
+
+        {loading ? (
+          <LinearProgress />
+        ) : (
+          <Grid container spacing={3}>
+            {/* User List */}
+            <Grid item xs={12} md={4}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Usuarios Administradores
+                  </Typography>
+                  
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    {admins.map((admin) => (
+                      <Box
+                        key={admin._id}
+                        sx={{
+                          p: 2,
+                          border: 1,
+                          borderColor: selectedUser?._id === admin._id ? 'primary.main' : 'divider',
+                          borderRadius: 1,
+                          cursor: admin.role === 'super_admin' ? 'default' : 'pointer',
+                          bgcolor: selectedUser?._id === admin._id ? 'action.selected' : 'background.paper',
+                          '&:hover': admin.role !== 'super_admin' ? {
+                            bgcolor: 'action.hover',
+                          } : {},
+                        }}
+                        onClick={() => admin.role !== 'super_admin' && handleUserSelect(admin)}
+                      >
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Avatar sx={{ bgcolor: 'primary.main' }}>
+                            {admin.firstName[0]}{admin.lastName[0]}
+                          </Avatar>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography variant="subtitle2" fontWeight={600}>
+                              {admin.firstName} {admin.lastName}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {admin.email}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            size="small"
+                            icon={admin.role === 'super_admin' ? <SupervisorAccount /> : <Person />}
+                            label={admin.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                            color={admin.role === 'super_admin' ? 'primary' : 'default'}
+                          />
+                        </Stack>
+                        {admin.role === 'super_admin' && (
+                          <Alert severity="info" sx={{ mt: 1, py: 0.5 }}>
+                            <Typography variant="caption">
+                              Los Super Admin tienen acceso completo
+                            </Typography>
+                          </Alert>
+                        )}
+                      </Box>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Permission Editor */}
+            <Grid item xs={12} md={8}>
+              {selectedUser ? (
+                <Card>
+                  <CardContent>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                      <Box>
+                        <Typography variant="h6">
+                          Permisos de {selectedUser.firstName} {selectedUser.lastName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Marca o desmarca los permisos que deseas asignar
+                        </Typography>
+                      </Box>
+                      <Stack direction="row" spacing={2}>
+                        <Button
+                          variant="outlined"
+                          startIcon={<RestartAlt />}
+                          onClick={() => setResetDialogOpen(true)}
+                          disabled={isSaving}
+                        >
+                          Restablecer
+                        </Button>
+                        <Button
+                          variant="contained"
+                          startIcon={<Save />}
+                          onClick={handleSave}
+                          disabled={!hasChanges() || isSaving}
+                        >
+                          Guardar Cambios
+                        </Button>
+                      </Stack>
+                    </Box>
+
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Módulo</TableCell>
+                            <TableCell align="center">Acceso</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {permissionGroups.map((group) => (
+                            <>
+                              <TableRow key={group.title}>
+                                <TableCell colSpan={2} sx={{ bgcolor: 'action.hover', fontWeight: 600 }}>
+                                  {group.title}
+                                </TableCell>
+                              </TableRow>
+                              {group.permissions.map((permission) => (
+                                <TableRow key={permission}>
+                                  <TableCell sx={{ pl: 4 }}>
+                                    {permissionLabels[permission]}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    <Switch
+                                      checked={editedPermissions?.[permission] || false}
+                                      onChange={(e) => handlePermissionChange(permission, e.target.checked)}
+                                      disabled={permission === 'permissions' || isSaving}
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent>
+                    <Box 
+                      display="flex" 
+                      flexDirection="column" 
+                      alignItems="center" 
+                      justifyContent="center" 
+                      height={400}
+                    >
+                      <Shield sx={{ fontSize: 80, color: 'action.disabled', mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary">
+                        Selecciona un usuario para gestionar sus permisos
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Los Super Admin tienen acceso completo y no pueden ser modificados
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
+            </Grid>
+          </Grid>
+        )}
+
+        {/* Reset Dialog */}
+        <Dialog
+          open={resetDialogOpen}
+          onClose={() => setResetDialogOpen(false)}
+        >
+          <DialogTitle>Restablecer Permisos</DialogTitle>
+          <DialogContent>
+            <Typography>
+              ¿Estás seguro de que deseas restablecer los permisos de {selectedUser?.firstName} {selectedUser?.lastName} a los valores predeterminados?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setResetDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleReset} 
+              color="primary" 
+              variant="contained"
+              disabled={isSaving}
+            >
+              Restablecer
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </AdminLayout>
+  )
+}
+
+// Add Grid import
+import { Grid } from '@mui/material'

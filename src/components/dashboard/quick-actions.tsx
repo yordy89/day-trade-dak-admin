@@ -90,8 +90,8 @@ export function QuickActions() {
         <List disablePadding>
           {actions.map((action) => {
             const Icon = action.icon
-            const color = action.color as any
-            const paletteColor = theme.palette[color]
+            const color = action.color
+            const paletteColor = (theme.palette[color as keyof typeof theme.palette] as any)
             const mainColor = paletteColor?.main || paletteColor?.[500] || theme.palette.grey[500]
 
             return (

@@ -50,7 +50,7 @@ export default function TransactionsPage() {
   } = useQuery({
     queryKey: ['transactions', filters],
     queryFn: () => analyticsService.getTransactionsWithFilters(filters),
-    keepPreviousData: true
+    placeholderData: (previousData) => previousData
   })
 
   const handleFilterChange = useCallback((newFilters: Partial<TransactionFilters>) => {

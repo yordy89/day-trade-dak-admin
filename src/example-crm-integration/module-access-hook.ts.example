@@ -1,0 +1,129 @@
+// Example: How to use module permissions in DayTradeDakCRM
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth'; // Your auth hook
+import API from '@/lib/axios'; // Your axios instance
+
+export enum ModuleType {
+  CLASSES = 'classes',
+  MASTER_CLASSES = 'masterClasses',
+  LIVE_RECORDED = 'liveRecorded',
+  PSICOTRADING = 'psicotrading',
+  PEACE_WITH_MONEY = 'peaceWithMoney',
+  LIVE_WEEKLY = 'liveWeekly',
+  COMMUNITY_EVENTS = 'communityEvents',
+  VIP_EVENTS = 'vipEvents',
+  MASTER_COURSE = 'masterCourse',
+}
+
+interface ModuleAccessResponse {
+  hasAccess: boolean;
+  userId: string;
+  moduleType: ModuleType;
+}
+
+/**
+ * Hook to check if the current user has access to a specific module
+ * Access is granted if:
+ * 1. User is super_admin
+ * 2. User has an active module permission (granted from admin)
+ * 3. User has an active subscription for that module
+ */
+export function useModuleAccess(moduleType: ModuleType) {
+  const { user } = useAuth();
+  const [hasAccess, setHasAccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setHasAccess(false);
+      setLoading(false);
+      return;
+    }
+
+    checkModuleAccess();
+  }, [user, moduleType]);
+
+  const checkModuleAccess = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Super admin always has access
+      if (user.role === 'super_admin') {
+        setHasAccess(true);
+        return;
+      }
+
+      // Check module permissions via API
+      const response = await API.get<ModuleAccessResponse>(
+        `/admin/module-permissions/check/${user._id}/${moduleType}`
+      );
+
+      setHasAccess(response.data.hasAccess);
+    } catch (err: any) {
+      console.error('Error checking module access:', err);
+      setError(err.message || 'Error checking access');
+      setHasAccess(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { hasAccess, loading, error, refetch: checkModuleAccess };
+}
+
+/**
+ * Component wrapper to protect content based on module access
+ */
+export function ModuleAccessGuard({ 
+  moduleType, 
+  children, 
+  fallback = null 
+}: { 
+  moduleType: ModuleType; 
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
+  const { hasAccess, loading } = useModuleAccess(moduleType);
+
+  if (loading) {
+    return <div>Loading...</div>; // Replace with your loading component
+  }
+
+  if (!hasAccess) {
+    return <>{fallback}</> || <div>No tienes acceso a este contenido</div>;
+  }
+
+  return <>{children}</>;
+}
+
+/**
+ * Example usage in a component:
+ * 
+ * function ClassesPage() {
+ *   const { hasAccess, loading } = useModuleAccess(ModuleType.CLASSES);
+ * 
+ *   if (loading) return <LoadingSpinner />;
+ *   
+ *   if (!hasAccess) {
+ *     return <SubscriptionRequired />;
+ *   }
+ * 
+ *   return <ClassesContent />;
+ * }
+ * 
+ * // Or using the component wrapper:
+ * 
+ * function PsicotradingSection() {
+ *   return (
+ *     <ModuleAccessGuard 
+ *       moduleType={ModuleType.PSICOTRADING}
+ *       fallback={<UpgradePrompt />}
+ *     >
+ *       <PsicotradingContent />
+ *     </ModuleAccessGuard>
+ *   );
+ * }
+ */

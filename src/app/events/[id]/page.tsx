@@ -43,15 +43,15 @@ import {
 } from '@mui/icons-material'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { useEventService } from '@/services/event.service'
+import { eventService } from '@/services/event.service'
 import { useSnackbar } from '@/hooks/use-snackbar'
-import { Event, EventRegistration } from '@/types/event'
+import type { Event, EventRegistration } from '@/types/event'
 import { PageHeader } from '@/components/page-header'
+import { AdminLayout } from '@/components/layout/admin-layout'
 
 export default function EventDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const eventService = useEventService()
   const { showSuccess, showError } = useSnackbar()
   
   const eventId = params.id as string
@@ -64,7 +64,7 @@ export default function EventDetailPage() {
   const [totalRegistrations, setTotalRegistrations] = useState(0)
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: 25,
+    pageSize: 10,
   })
 
   // Filters
@@ -81,7 +81,13 @@ export default function EventDetailPage() {
         eventService.getEvent(eventId),
         eventService.getEventStatistics(eventId),
       ])
-      setEvent(eventData)
+      // Map the service response to our local Event type
+      const mappedEvent: Event = {
+        ...eventData as any,
+        name: eventData.title || '',  // Map title to name
+        isActive: eventData.status === 'active',  // Map status to isActive
+      }
+      setEvent(mappedEvent)
       setStatistics(statsData)
     } catch (error) {
       showError('Error al cargar el evento')
@@ -100,8 +106,15 @@ export default function EventDetailPage() {
         search: searchTerm,
         paymentStatus: paymentStatusFilter,
       })
-      setRegistrations(response.data)
-      setTotalRegistrations(response.total)
+      // Map service registrations to local type
+      const mappedRegistrations: EventRegistration[] = (response.registrations || []).map((reg: any) => ({
+        ...reg,
+        userId: reg.user,  // Map user to userId
+        amount: reg.paymentAmount,  // Map paymentAmount to amount
+        registeredAt: reg.registrationDate || reg.createdAt,  // Map registrationDate to registeredAt
+      }))
+      setRegistrations(mappedRegistrations)
+      setTotalRegistrations(response.total || 0)
     } catch (error) {
       showError('Error al cargar los registros')
       console.error('Error fetching registrations:', error)
@@ -148,103 +161,259 @@ export default function EventDetailPage() {
     {
       field: 'user',
       headerName: 'Participante',
-      flex: 1,
+      flex: 1.2,
       minWidth: 250,
+      maxWidth: 350,
       renderCell: (params) => {
-        const user = params.row.userId
+        // Handle both populated user object and direct fields
+        let firstName = ''
+        let lastName = ''
+        let email = ''
+        
+        if (params.row.user && typeof params.row.user === 'object') {
+          firstName = params.row.user.firstName || ''
+          lastName = params.row.user.lastName || ''
+          email = params.row.user.email || ''
+        } else if (params.row.userId && typeof params.row.userId === 'object') {
+          firstName = params.row.userId.firstName || ''
+          lastName = params.row.userId.lastName || ''
+          email = params.row.userId.email || ''
+        } else {
+          firstName = params.row.firstName || ''
+          lastName = params.row.lastName || ''
+          email = params.row.email || ''
+        }
+        
+        const fullName = `${firstName} ${lastName}`.trim()
+        const initials = firstName && lastName ? 
+          `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() : 
+          email ? email.charAt(0).toUpperCase() : '?'
+        
         return (
-          <Box display="flex" alignItems="center" gap={1}>
-            <Avatar sx={{ width: 32, height: 32 }}>
-              {user.firstName[0]}{user.lastName[0]}
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ width: '100%', py: 0.5 }}>
+            <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main', flexShrink: 0 }}>
+              {initials}
             </Avatar>
-            <Box>
-              <Typography variant="body2" fontWeight={500}>
-                {user.firstName} {user.lastName}
+            <Box sx={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
+              <Typography 
+                variant="body2" 
+                fontWeight={500} 
+                sx={{ 
+                  overflow: 'hidden', 
+                  textOverflow: 'ellipsis', 
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1.3
+                }}
+              >
+                {fullName || 'Sin nombre'}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {user.email}
+              <Typography 
+                variant="caption" 
+                color="text.secondary" 
+                sx={{ 
+                  overflow: 'hidden', 
+                  textOverflow: 'ellipsis', 
+                  whiteSpace: 'nowrap',
+                  display: 'block',
+                  lineHeight: 1.3
+                }}
+              >
+                {email}
               </Typography>
             </Box>
-          </Box>
+          </Stack>
         )
       },
     },
     {
       field: 'phone',
       headerName: 'Teléfono',
-      width: 150,
-      renderCell: (params) => (
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <Phone fontSize="small" color="action" />
-          <Typography variant="body2">
-            {params.row.userId.phone || 'N/A'}
-          </Typography>
-        </Box>
-      ),
+      flex: 0.8,
+      minWidth: 160,
+      maxWidth: 200,
+      renderCell: (params) => {
+        let phone = 'N/A'
+        
+        // Check all possible phone field locations
+        if (params.row.user && typeof params.row.user === 'object') {
+          phone = params.row.user.phone || params.row.user.phoneNumber || 'N/A'
+        } else if (params.row.userId && typeof params.row.userId === 'object') {
+          phone = params.row.userId.phone || params.row.userId.phoneNumber || 'N/A'
+        }
+        
+        // Also check top-level fields
+        if (phone === 'N/A') {
+          phone = params.row.phoneNumber || params.row.phone || 'N/A'
+        }
+        
+        return (
+          <Box display="flex" alignItems="center" gap={0.5} sx={{ height: '100%' }}>
+            <Phone fontSize="small" color="action" sx={{ opacity: 0.7 }} />
+            <Typography variant="body2" color={phone === 'N/A' ? 'text.secondary' : 'text.primary'}>
+              {phone}
+            </Typography>
+          </Box>
+        )
+      },
     },
     {
       field: 'ticketType',
       headerName: 'Tipo de Ticket',
-      width: 120,
+      flex: 0.6,
+      minWidth: 110,
+      maxWidth: 130,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => (
         <Chip
           label={params.value === 'vip' ? 'VIP' : 'General'}
           color={params.value === 'vip' ? 'warning' : 'default'}
           size="small"
+          sx={{ fontWeight: 500 }}
         />
       ),
     },
     {
-      field: 'amount',
+      field: 'additionalAttendees',
+      headerName: 'Asistentes',
+      flex: 0.6,
+      minWidth: 120,
+      maxWidth: 150,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        // Get additional attendees info
+        const additionalAdults = params.row.additionalInfo?.additionalAttendees?.adults || 0
+        const children = params.row.additionalInfo?.additionalAttendees?.children || 0
+        
+        // Total adults is the registrant (1) plus any additional adults
+        const totalAdults = 1 + additionalAdults
+        const totalAttendees = totalAdults + children
+        
+        if (totalAttendees === 1) {
+          return (
+            <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+              <Typography variant="body2" color="text.secondary">
+                1 adulto
+              </Typography>
+            </Box>
+          )
+        }
+        
+        return (
+          <Box 
+            display="flex" 
+            flexDirection="column" 
+            alignItems="center" 
+            justifyContent="center" 
+            height="100%"
+            py={0.5}
+          >
+            <Typography variant="body2" fontWeight={500} sx={{ lineHeight: 1.2 }}>
+              {totalAdults} adulto{totalAdults > 1 ? 's' : ''}
+            </Typography>
+            {children > 0 && (
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                {children} niño{children > 1 ? 's' : ''}
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary" fontStyle="italic" sx={{ lineHeight: 1.2, mt: 0.5 }}>
+              Total: {totalAttendees}
+            </Typography>
+          </Box>
+        )
+      },
+    },
+    {
+      field: 'paymentAmount',
       headerName: 'Monto',
-      width: 100,
+      flex: 0.5,
+      minWidth: 90,
+      maxWidth: 120,
+      align: 'right',
+      headerAlign: 'right',
       renderCell: (params) => (
-        <Typography variant="body2" fontWeight={500}>
-          ${params.value}
+        <Typography variant="body2" fontWeight={600} color="success.main">
+          ${(params.value || params.row.amount || 0).toFixed(2)}
         </Typography>
       ),
     },
     {
       field: 'paymentStatus',
       headerName: 'Estado de Pago',
-      width: 150,
+      flex: 0.7,
+      minWidth: 130,
+      maxWidth: 160,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => {
         const statusColors = {
           pending: 'warning',
           completed: 'success',
+          paid: 'success',
           failed: 'error',
           refunded: 'info',
+          free: 'default',
         }
         const statusLabels = {
           pending: 'Pendiente',
           completed: 'Completado',
+          paid: 'Pagado',
           failed: 'Fallido',
           refunded: 'Reembolsado',
+          free: 'Gratis',
         }
         return (
           <Chip
             label={statusLabels[params.value as keyof typeof statusLabels] || params.value}
             color={statusColors[params.value as keyof typeof statusColors] as any}
             size="small"
+            sx={{ fontWeight: 500, minWidth: 100 }}
           />
         )
       },
     },
     {
-      field: 'registeredAt',
+      field: 'registrationDate',
       headerName: 'Fecha de Registro',
-      width: 180,
-      renderCell: (params) => (
-        <Typography variant="body2">
-          {format(new Date(params.value), 'dd MMM yyyy HH:mm', { locale: es })}
-        </Typography>
-      ),
+      flex: 0.9,
+      minWidth: 170,
+      maxWidth: 200,
+      renderCell: (params) => {
+        const date = params.value || params.row.registeredAt || params.row.createdAt
+        if (!date) return <Typography variant="body2" color="text.secondary">-</Typography>
+        
+        try {
+          const dateObj = new Date(date)
+          // Check if date is valid
+          if (isNaN(dateObj.getTime())) {
+            return <Typography variant="body2" color="text.secondary">Fecha inválida</Typography>
+          }
+          
+          return (
+            <Box>
+              <Typography variant="body2" sx={{ lineHeight: 1.3 }}>
+                {format(dateObj, 'dd MMM yyyy', { locale: es })}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.3 }}>
+                {format(dateObj, 'HH:mm', { locale: es })}
+              </Typography>
+            </Box>
+          )
+        } catch (error) {
+          console.error('Error formatting date:', date, error)
+          return <Typography variant="body2" color="text.secondary">-</Typography>
+        }
+      },
     },
     {
       field: 'checkedIn',
       headerName: 'Check-in',
-      width: 100,
+      flex: 0.4,
+      minWidth: 85,
+      maxWidth: 100,
       align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => (
         params.value ? (
           <CheckCircle color="success" />
@@ -257,35 +426,53 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <Container maxWidth="xl">
-        <Box sx={{ mb: 4 }}>
-          <Skeleton variant="text" width={200} height={40} />
-          <Skeleton variant="text" width={300} height={24} />
+      <AdminLayout>
+        <Box sx={{ px: 3, py: 2 }}>
+          <Skeleton variant="text" width={300} height={40} />
+          <Skeleton variant="text" width={200} height={24} />
         </Box>
-        <Grid container spacing={3}>
-          {[1, 2, 3, 4].map((i) => (
-            <Grid item xs={12} sm={6} md={3} key={i}>
-              <Skeleton variant="rectangular" height={120} />
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
+        <Container maxWidth="xl">
+          <Grid container spacing={3}>
+            {[1, 2, 3, 4].map((i) => (
+              <Grid item xs={12} sm={6} md={3} key={i}>
+                <Skeleton variant="rectangular" height={120} />
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </AdminLayout>
     )
   }
 
   if (!event) {
     return (
-      <Container maxWidth="xl">
-        <Alert severity="error">Evento no encontrado</Alert>
-      </Container>
+      <AdminLayout>
+        <PageHeader
+          title="Evento no encontrado"
+          action={
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBack />}
+              onClick={() => router.push('/events')}
+            >
+              Volver
+            </Button>
+          }
+        />
+        <Container maxWidth="xl">
+          <Alert severity="error" sx={{ mt: 2 }}>
+            El evento solicitado no existe o ha sido eliminado.
+          </Alert>
+        </Container>
+      </AdminLayout>
     )
   }
 
   return (
-    <Container maxWidth="xl">
+    <AdminLayout>
       <PageHeader
-        title={event.name}
-        subtitle={event.title}
+        title={event.name || event.title || 'Evento'}
+        subtitle={event.title || event.description || undefined}
         action={
           <Stack direction="row" spacing={2}>
             <Button
@@ -300,14 +487,15 @@ export default function EventDetailPage() {
               startIcon={<Edit />}
               onClick={() => router.push(`/events/${eventId}/edit`)}
             >
-              Editar
+              Editar Evento
             </Button>
           </Stack>
         }
       />
 
-      {/* Event Info Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Container maxWidth="xl">
+        {/* Event Info Cards */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
@@ -445,7 +633,7 @@ export default function EventDetailPage() {
                     Ingresos Totales
                   </Typography>
                   <Typography variant="h4" fontWeight={600}>
-                    ${statistics?.totalRevenue || 0}
+                    ${(statistics?.totalRevenue || 0).toFixed(2)}
                   </Typography>
                 </Box>
                 <AttachMoney sx={{ fontSize: 40, color: 'success.main', opacity: 0.3 }} />
@@ -541,6 +729,8 @@ export default function EventDetailPage() {
                   <MenuItem value="">Todos</MenuItem>
                   <MenuItem value="pending">Pendiente</MenuItem>
                   <MenuItem value="completed">Completado</MenuItem>
+                  <MenuItem value="paid">Pagado</MenuItem>
+                  <MenuItem value="free">Gratis</MenuItem>
                   <MenuItem value="failed">Fallido</MenuItem>
                   <MenuItem value="refunded">Reembolsado</MenuItem>
                 </Select>
@@ -562,28 +752,72 @@ export default function EventDetailPage() {
           </Grid>
 
           {/* Registrations Table */}
-          <Box sx={{ width: '100%' }}>
+          <Box sx={{ width: '100%', mt: 3, display: 'flex', flexDirection: 'column' }}>
             <DataGrid
               rows={registrations}
               columns={columns}
-              getRowId={(row) => row._id}
+              getRowId={(row) => row._id || row.id || Math.random().toString()}
               paginationModel={paginationModel}
               onPaginationModelChange={setPaginationModel}
-              pageSizeOptions={[25, 50, 100]}
+              pageSizeOptions={[10, 25, 50]}
               rowCount={totalRegistrations}
               paginationMode="server"
               loading={registrationsLoading}
               autoHeight
               disableRowSelectionOnClick
+              rowHeight={90}
+              getRowHeight={() => 90}
+              localeText={{
+                noRowsLabel: 'No se encontraron registros',
+                MuiTablePagination: {
+                  labelRowsPerPage: 'Filas por página',
+                },
+              }}
               sx={{
+                border: 'none',
+                '& .MuiDataGrid-root': {
+                  border: 'none',
+                },
+                '& .MuiDataGrid-cell': {
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  py: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                },
+                '& .MuiDataGrid-row': {
+                  minHeight: '90px !important',
+                  maxHeight: '90px !important',
+                },
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: 'background.default',
+                  borderBottom: '2px solid',
+                  borderColor: 'divider',
+                  fontWeight: 600,
+                },
+                '& .MuiDataGrid-columnHeaderTitle': {
+                  fontWeight: 600,
+                },
                 '& .MuiDataGrid-cell:focus': {
                   outline: 'none',
+                },
+                '& .MuiDataGrid-row:hover': {
+                  backgroundColor: 'action.hover',
+                },
+                '& .MuiDataGrid-footerContainer': {
+                  borderTop: '2px solid',
+                  borderColor: 'divider',
+                  mt: 2,
+                },
+                '& .MuiDataGrid-virtualScroller': {
+                  backgroundColor: 'background.paper',
                 },
               }}
             />
           </Box>
         </CardContent>
       </Card>
-    </Container>
+      </Container>
+    </AdminLayout>
   )
 }

@@ -124,12 +124,10 @@ export function StatsOverview() {
                       borderRadius: 2,
                       bgcolor: alpha(
                         theme.palette[color]?.main || 
-                        theme.palette[color]?.[500] || 
                         theme.palette.grey[500], 
                         0.1
                       ),
                       color: theme.palette[color]?.main || 
-                        theme.palette[color]?.[500] || 
                         theme.palette.grey[500],
                     }}
                   >

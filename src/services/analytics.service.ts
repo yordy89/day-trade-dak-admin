@@ -260,13 +260,7 @@ class AnalyticsService {
       mrrChange: 0, // TODO: Calculate based on previous period
       averageTransactionValue: payment.averageTransactionValue || 0,
       atvChange: 0, // TODO: Calculate based on previous period
-      totalTransactions: payment.totalTransactions || 0,
-      successfulTransactions: payment.successfulTransactions || 0,
-      failedTransactions: payment.failedTransactions || 0,
-      refundedAmount: payment.refundedAmount || 0,
-      conversionRate: payment.conversionRate || 0,
-      churnRate: subscription.churnRate || 0,
-      newSubscriptions: subscription.newSubscriptions || 0
+      period: period
     }
   }
 

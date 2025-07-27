@@ -14,8 +14,29 @@ export interface Event {
   type: 'master_course' | 'community_event' | 'general'
   requiresActiveSubscription?: boolean
   capacity?: number
-  registrations?: string[]
+  registrations?: string[] | number
   currentRegistrations?: number
+  metadata?: {
+    hotel?: string
+    hotelAddress?: string
+    includesAccommodation?: boolean
+    includesMeals?: boolean
+    includesSaturdayDinner?: boolean
+  }
+  included?: string[]
+  notIncluded?: string[]
+  requirements?: string[]
+  contact?: {
+    email?: string
+    phone?: string
+    whatsapp?: string
+  }
+  coordinates?: {
+    lat?: number
+    lng?: number
+  }
+  status?: 'active' | 'draft' | 'completed'
+  featuredInCRM?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -41,6 +62,10 @@ export interface EventRegistration {
   additionalInfo?: {
     dietaryRestrictions?: string
     specialRequests?: string
+    additionalAttendees?: {
+      adults?: number
+      children?: number
+    }
   }
   createdAt: string
   updatedAt: string

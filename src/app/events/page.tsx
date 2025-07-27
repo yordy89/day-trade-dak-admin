@@ -36,19 +36,21 @@ import {
   CalendarToday,
   Download,
   FilterList,
+  ContentCopy,
+  Star,
+  StarBorder,
 } from '@mui/icons-material'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { useEventService } from '@/services/event.service'
+import { eventService } from '@/services/event.service'
 import { useSnackbar } from '@/hooks/use-snackbar'
-import { Event } from '@/types/event'
+import type { Event } from '@/types/event'
 import { ConfirmDialog } from '@/components/dialogs/confirm-dialog'
 import { PageHeader } from '@/components/page-header'
 import { AdminLayout } from '@/components/layout/admin-layout'
 
 export default function EventsPage() {
   const router = useRouter()
-  const eventService = useEventService()
   const { showSuccess, showError } = useSnackbar()
 
   const [events, setEvents] = useState<Event[]>([])
@@ -79,17 +81,14 @@ export default function EventsPage() {
         type: typeFilter,
         status: statusFilter,
       })
-      // Handle the actual API response structure
-      if (response.events) {
-        setEvents(response.events)
-        setTotalEvents(response.pagination?.total || response.events.length)
-      } else if (response.data) {
-        setEvents(response.data)
-        setTotalEvents(response.total || 0)
-      } else {
-        setEvents([])
-        setTotalEvents(0)
-      }
+      // Map service events to local Event type
+      const mappedEvents: Event[] = (response.events || []).map((event: any) => ({
+        ...event,
+        name: event.title || '',  // Map title to name
+        isActive: event.status === 'active',  // Map status to isActive
+      }))
+      setEvents(mappedEvents)
+      setTotalEvents(response.total || 0)
     } catch (error) {
       showError('Error al cargar los eventos')
       console.error('Error fetching events:', error)
@@ -112,6 +111,31 @@ export default function EventsPage() {
 
   const handleViewEvent = (event: Event) => {
     router.push(`/events/${event._id}`)
+  }
+
+  const handleCloneEvent = (event: Event) => {
+    // Pass the event data as query parameters to pre-fill the form
+    const eventData = {
+      name: event.name,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      type: event.type,
+      price: event.price,
+      vipPrice: event.vipPrice,
+      capacity: event.capacity,
+      requiresActiveSubscription: event.requiresActiveSubscription,
+      bannerImage: event.bannerImage,
+      metadata: event.metadata,
+      included: event.included,
+      notIncluded: event.notIncluded,
+      requirements: event.requirements,
+      contact: event.contact,
+    }
+    
+    // Store in sessionStorage to avoid URL length issues
+    sessionStorage.setItem('cloneEventData', JSON.stringify(eventData))
+    router.push('/events/create?clone=true')
   }
 
   const handleDeleteEvent = async () => {
@@ -156,6 +180,17 @@ export default function EventsPage() {
     }
   }
 
+  const handleToggleFeatured = async (event: Event) => {
+    try {
+      await eventService.toggleFeaturedStatus(event._id)
+      showSuccess(event.featuredInCRM ? 'Evento removido de CRM' : 'Evento destacado en CRM')
+      fetchEvents()
+    } catch (error) {
+      showError('Error al actualizar estado destacado')
+      console.error('Error toggling featured status:', error)
+    }
+  }
+
   const columns: GridColDef[] = [
     {
       field: 'name',
@@ -165,9 +200,9 @@ export default function EventsPage() {
       renderCell: (params) => (
         <Box>
           <Typography variant="body2" fontWeight={600}>
-            {params.row.name}
+            {params.row.name || params.row.title}
           </Typography>
-          {params.row.title && (
+          {params.row.title && params.row.name && (
             <Typography 
               variant="caption" 
               color="text.secondary"
@@ -231,7 +266,7 @@ export default function EventsPage() {
       },
     },
     {
-      field: 'currentRegistrations',
+      field: 'registrations',
       headerName: 'Registros',
       width: 110,
       align: 'left',
@@ -240,7 +275,7 @@ export default function EventsPage() {
         <Box display="flex" alignItems="center" gap={0.5} height="100%">
           <People sx={{ fontSize: 16, color: 'text.secondary' }} />
           <Typography variant="body2" fontWeight={500}>
-            {params.row.currentRegistrations || params.row.registrations?.length || 0}
+            {params.row.registrations || params.row.currentRegistrations || 0}
             {params.row.capacity && `/${params.row.capacity}`}
           </Typography>
         </Box>
@@ -262,23 +297,61 @@ export default function EventsPage() {
       ),
     },
     {
-      field: 'isActive',
+      field: 'status',
       headerName: 'Estado',
-      width: 110,
+      width: 120,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
-        const isActive = params.value !== false
+        const event = params.row
+        const eventDate = new Date(event.date)
+        const now = new Date()
+        
+        let status = 'Activo'
+        let color: 'success' | 'default' | 'info' = 'success'
+        
+        // Check event status based on backend data
+        if (event.status === 'draft' || event.isActive === false) {
+          status = 'Borrador'
+          color = 'default'
+        } else if (eventDate < now) {
+          status = 'Completado'
+          color = 'info'
+        }
+        
         return (
           <Chip
-            label={isActive ? 'Activo' : 'Inactivo'}
-            color={isActive ? 'success' : 'default'}
+            label={status}
+            color={color}
             size="small"
             sx={{ 
-              minWidth: 80,
+              minWidth: 90,
               fontWeight: 500
             }}
           />
+        )
+      },
+    },
+    {
+      field: 'featuredInCRM',
+      headerName: 'CRM',
+      width: 80,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const isFeatured = params.value === true
+        return (
+          <IconButton
+            size="small"
+            onClick={async (e) => {
+              e.stopPropagation()
+              await handleToggleFeatured(params.row)
+            }}
+            color={isFeatured ? 'warning' : 'default'}
+            title={isFeatured ? 'Destacado en CRM' : 'No destacado en CRM'}
+          >
+            {isFeatured ? <Star /> : <StarBorder />}
+          </IconButton>
         )
       },
     },
@@ -345,7 +418,11 @@ export default function EventsPage() {
                     Eventos Activos
                   </Typography>
                   <Typography variant="h4" fontWeight={600}>
-                    {loading ? <Skeleton width={60} /> : events?.filter(e => e.isActive).length || 0}
+                    {loading ? <Skeleton width={60} /> : events?.filter(e => {
+                      const eventDate = new Date(e.date)
+                      const now = new Date()
+                      return e.isActive !== false && eventDate >= now
+                    }).length || 0}
                   </Typography>
                 </Box>
                 <EventIcon sx={{ fontSize: 40, color: 'success.main', opacity: 0.3 }} />
@@ -364,7 +441,14 @@ export default function EventsPage() {
                   </Typography>
                   <Typography variant="h4" fontWeight={600}>
                     {loading ? <Skeleton width={60} /> : 
-                      events?.reduce((acc, event) => acc + (event.currentRegistrations || event.registrations?.length || 0), 0) || 0
+                      events?.reduce((acc, event) => {
+                        const count = typeof event.registrations === 'number' 
+                          ? event.registrations 
+                          : Array.isArray(event.registrations) 
+                            ? event.registrations.length 
+                            : event.currentRegistrations || 0;
+                        return acc + count;
+                      }, 0) || 0
                     }
                   </Typography>
                 </Box>
@@ -383,9 +467,10 @@ export default function EventsPage() {
                     Próximo Evento
                   </Typography>
                   <Typography variant="body1" fontWeight={500}>
-                    {loading ? <Skeleton width={100} /> : 
-                      events?.find(e => new Date(e.date) > new Date())?.name || 'N/A'
-                    }
+                    {loading ? <Skeleton width={100} /> : (() => {
+                      const upcomingEvents = events?.filter(e => new Date(e.date) > new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                      return upcomingEvents?.[0]?.name || upcomingEvents?.[0]?.title || 'N/A';
+                    })()}
                   </Typography>
                 </Box>
                 <CalendarToday sx={{ fontSize: 40, color: 'warning.main', opacity: 0.3 }} />
@@ -440,7 +525,7 @@ export default function EventsPage() {
                 >
                   <MenuItem value="">Todos</MenuItem>
                   <MenuItem value="active">Activo</MenuItem>
-                  <MenuItem value="inactive">Inactivo</MenuItem>
+                  <MenuItem value="draft">Borrador</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -538,6 +623,29 @@ export default function EventsPage() {
         }}>
           <Edit sx={{ mr: 1 }} fontSize="small" />
           Editar
+        </MenuItem>
+        <MenuItem onClick={() => {
+          handleCloneEvent(selectedEvent!)
+          handleMenuClose()
+        }}>
+          <ContentCopy sx={{ mr: 1 }} fontSize="small" />
+          Clonar
+        </MenuItem>
+        <MenuItem onClick={async () => {
+          await handleToggleFeatured(selectedEvent!)
+          handleMenuClose()
+        }}>
+          {selectedEvent?.featuredInCRM ? (
+            <>
+              <StarBorder sx={{ mr: 1 }} fontSize="small" />
+              Quitar de CRM
+            </>
+          ) : (
+            <>
+              <Star sx={{ mr: 1 }} fontSize="small" />
+              Destacar en CRM
+            </>
+          )}
         </MenuItem>
         <MenuItem divider />
         <MenuItem onClick={() => {

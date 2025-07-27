@@ -18,7 +18,9 @@
     "events": "Events",
     "courses": "Courses",
     "announcements": "Announcements",
-    "audit_logs": "Audit Logs"
+    "audit_logs": "Audit Logs",
+    "permissions": "Permissions",
+    "module_permissions": "Module Permissions"
   },
   "actions": {
     "save": "Save",
