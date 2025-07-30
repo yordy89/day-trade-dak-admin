@@ -92,7 +92,7 @@ export interface PaymentMethodDistribution {
 }
 
 export interface ReportType {
-  type: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom'
+  type: string
   format: 'pdf' | 'csv' | 'excel'
   dateRange?: DateRange
   includeCharts?: boolean
@@ -427,37 +427,21 @@ class AnalyticsService {
   }
 
   async generateReport(reportType: ReportType): Promise<Blob> {
-    // For now, generate a mock PDF blob since backend doesn't support full file generation yet
-    // In production, this would call the actual endpoint that returns a PDF/Excel/CSV file
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Create a mock blob based on format
-    let content = ''
-    let mimeType = ''
-    
-    switch (reportType.format) {
-      case 'csv':
-        mimeType = 'text/csv'
-        content = 'Date,Revenue,Transactions,Active Subscriptions,MRR,Churn Rate\n'
-        content += '2024-01-01,5000,50,100,25000,2.1\n'
-        content += '2024-01-02,6000,60,102,25500,2.0\n'
-        content += '2024-01-03,5500,55,101,25250,2.1\n'
-        break
-      case 'excel':
-        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        // Mock Excel content (in real app, would use a library like ExcelJS)
-        content = 'PK\x03\x04Mock Excel File Content'
-        break
-      case 'pdf':
-        mimeType = 'application/pdf'
-        // Mock PDF content (in real app, would use a library like jsPDF or server-side generation)
-        content = '%PDF-1.4\n%Mock PDF Content\n'
-        break
+    const requestBody = {
+      type: reportType.type,
+      format: reportType.format,
+      dateRange: reportType.dateRange ? {
+        start: reportType.dateRange.start.toISOString().split('T')[0],
+        end: reportType.dateRange.end.toISOString().split('T')[0],
+      } : undefined,
+      includeCharts: reportType.includeCharts,
     }
-    
-    return new Blob([content], { type: mimeType })
+
+    const response = await apiClient.post('/admin/reports/generate', requestBody, {
+      responseType: 'blob',
+    })
+
+    return response.data
   }
 }
 

@@ -93,6 +93,32 @@ class UserService {
     const response = await apiClient.get('/admin/users/hosts')
     return response.data
   }
+
+  // Subscription management methods
+  async addUserSubscription(userId: string, subscriptionData: {
+    plan: string
+    expiresAt?: string
+  }): Promise<any> {
+    const response = await apiClient.post(`/admin/users/${userId}/subscriptions`, subscriptionData)
+    return response.data
+  }
+
+  async updateUserSubscription(userId: string, subscriptionId: string, data: {
+    plan?: string
+    expiresAt?: string
+  }): Promise<any> {
+    const response = await apiClient.patch(`/admin/users/${userId}/subscriptions/${subscriptionId}`, data)
+    return response.data
+  }
+
+  async cancelUserSubscription(userId: string, subscriptionId: string): Promise<any> {
+    const response = await apiClient.post(`/admin/users/${userId}/subscriptions/${subscriptionId}/cancel`)
+    return response.data
+  }
+
+  async deleteUserSubscription(userId: string, subscriptionId: string): Promise<void> {
+    await apiClient.delete(`/admin/users/${userId}/subscriptions/${subscriptionId}`)
+  }
 }
 
 export const userService = new UserService()

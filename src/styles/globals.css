@@ -59,6 +59,101 @@
   }
 }
 
+/* Fix for browser autofill background color */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: currentColor !important;
+  transition: background-color 5000s ease-in-out 0s;
+  color: inherit !important;
+}
+
+/* Dark mode autofill styles - HIGHEST PRIORITY */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active,
+.dark textarea:-webkit-autofill,
+.dark textarea:-webkit-autofill:hover,
+.dark textarea:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill:active,
+.dark select:-webkit-autofill,
+.dark select:-webkit-autofill:hover,
+.dark select:-webkit-autofill:focus,
+.dark select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.08) inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Light mode autofill styles */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.04) inset !important;
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.87) !important;
+}
+
+/* MUI specific autofill rules */
+.MuiInputBase-root input:-webkit-autofill,
+.MuiInputBase-root input:-webkit-autofill:hover,
+.MuiInputBase-root input:-webkit-autofill:focus,
+.MuiInputBase-root input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark .MuiInputBase-root input:-webkit-autofill,
+.dark .MuiInputBase-root input:-webkit-autofill:hover,
+.dark .MuiInputBase-root input:-webkit-autofill:focus,
+.dark .MuiInputBase-root input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.08) inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* General dark mode input text color */
+.dark input,
+.dark textarea,
+.dark select {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* MUI specific dark mode input text */
+.dark .MuiInputBase-root input,
+.dark .MuiInputBase-root textarea {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Remove blue focus outline from all inputs */
+input:focus,
+textarea:focus,
+select:focus,
+.MuiInputBase-root.Mui-focused,
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 @layer components {
   /* Custom scrollbar */
   .custom-scrollbar::-webkit-scrollbar {
@@ -113,4 +208,14 @@
   .animation-delay-400 {
     animation-delay: 400ms;
   }
+}
+
+/* CRITICAL: Force dark mode autofill text to be white - MUST BE LAST */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+  caret-color: #ffffff !important;
 }

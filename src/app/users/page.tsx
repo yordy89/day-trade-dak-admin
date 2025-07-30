@@ -70,7 +70,7 @@ export default function UsersPage() {
             <Button
               variant="contained"
               startIcon={<PersonAdd />}
-              onClick={() => router.push('/users/new')}
+              onClick={() => router.push('/users/create')}
             >
               {t('actions.addUser', 'Add User')}
             </Button>
@@ -138,10 +138,16 @@ export default function UsersPage() {
               label={t('filters.subscription', 'Subscription')}
             >
               <MenuItem value="all">{t('filters.all', 'All')}</MenuItem>
-              <MenuItem value="free">{t('filters.free', 'Free')}</MenuItem>
-              <MenuItem value="basic">{t('filters.basic', 'Basic')}</MenuItem>
-              <MenuItem value="pro">{t('filters.pro', 'Pro')}</MenuItem>
-              <MenuItem value="enterprise">{t('filters.enterprise', 'Enterprise')}</MenuItem>
+              <MenuItem value="LiveWeeklyManual">Live Weekly Manual</MenuItem>
+              <MenuItem value="LiveWeeklyRecurring">Live Weekly Recurring</MenuItem>
+              <MenuItem value="MasterClases">Master Clases</MenuItem>
+              <MenuItem value="LiveRecorded">Live Recorded</MenuItem>
+              <MenuItem value="Psicotrading">Psicotrading</MenuItem>
+              <MenuItem value="Classes">Classes</MenuItem>
+              <MenuItem value="PeaceWithMoney">Peace With Money</MenuItem>
+              <MenuItem value="MasterCourse">Master Course</MenuItem>
+              <MenuItem value="CommunityEvent">Community Event</MenuItem>
+              <MenuItem value="VipEvent">VIP Event</MenuItem>
             </Select>
           </FormControl>
 

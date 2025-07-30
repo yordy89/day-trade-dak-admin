@@ -14,6 +14,7 @@ export interface PermissionSet {
   settings: boolean
   auditLogs: boolean
   permissions?: boolean // Only visible for super_admin
+  contactMessages: boolean
 }
 
 export interface AdminUserWithPermissions {
@@ -42,6 +43,7 @@ export interface UpdatePermissionsRequest {
   settings?: boolean
   auditLogs?: boolean
   permissions?: boolean
+  contactMessages?: boolean
 }
 
 export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
@@ -60,6 +62,7 @@ export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
   settings: true,
   auditLogs: false,
   permissions: false,
+  contactMessages: true,
 }
 
 export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
@@ -78,4 +81,5 @@ export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
   settings: true,
   auditLogs: true,
   permissions: true,
+  contactMessages: true,
 }

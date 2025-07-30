@@ -58,83 +58,103 @@ interface ReportTemplate {
 
 const reportTemplates: ReportTemplate[] = [
   {
-    id: 'daily-summary',
+    id: 'daily',
     title: 'Daily Summary Report',
     description: 'Complete overview of daily revenue, transactions, and key metrics',
     icon: <Calendar size={24} />,
     type: 'daily',
-    defaultFormat: 'pdf',
+    defaultFormat: 'excel',
     color: '#16a34a',
     available: true
   },
   {
-    id: 'weekly-performance',
+    id: 'weekly',
     title: 'Weekly Performance Report',
     description: 'Week-over-week comparison with trends and insights',
     icon: <TrendUp size={24} />,
     type: 'weekly',
-    defaultFormat: 'pdf',
+    defaultFormat: 'excel',
     color: '#0ea5e9',
     available: true
   },
   {
-    id: 'monthly-financial',
+    id: 'monthly',
     title: 'Monthly Financial Report',
     description: 'Comprehensive monthly P&L, subscription metrics, and revenue analysis',
     icon: <FileText size={24} />,
     type: 'monthly',
-    defaultFormat: 'pdf',
+    defaultFormat: 'excel',
     color: '#8b5cf6',
     available: true
   },
   {
-    id: 'quarterly-business',
+    id: 'quarterly',
     title: 'Quarterly Business Review',
     description: 'Executive summary with quarter performance and growth metrics',
     icon: <TrendUp size={24} />,
     type: 'quarterly',
-    defaultFormat: 'pdf',
+    defaultFormat: 'excel',
     color: '#f97316',
     available: true
   },
   {
-    id: 'annual-summary',
+    id: 'yearly',
     title: 'Annual Summary Report',
     description: 'Year-end comprehensive report with all metrics and trends',
     icon: <Calendar size={24} />,
     type: 'yearly',
-    defaultFormat: 'pdf',
+    defaultFormat: 'excel',
     color: '#ec4899',
     available: true
   },
   {
-    id: 'customer-analytics',
-    title: 'Customer Analytics Report',
-    description: 'Customer lifetime value, acquisition costs, and retention metrics',
-    icon: <Users size={24} />,
-    type: 'custom',
+    id: 'revenue-analysis',
+    title: 'Revenue Analysis Report',
+    description: 'Detailed revenue breakdown by plan, payment method, and trends',
+    icon: <TrendUp size={24} />,
+    type: 'revenue-analysis',
     defaultFormat: 'excel',
     color: '#06b6d4',
     available: true
   },
   {
-    id: 'subscription-insights',
-    title: 'Subscription Insights',
-    description: 'Detailed subscription analytics, churn analysis, and MRR breakdown',
+    id: 'user-growth',
+    title: 'User Growth Report',
+    description: 'User acquisition, retention, and engagement metrics',
+    icon: <Users size={24} />,
+    type: 'user-growth',
+    defaultFormat: 'excel',
+    color: '#10b981',
+    available: true
+  },
+  {
+    id: 'subscription-analytics',
+    title: 'Subscription Analytics',
+    description: 'MRR, churn analysis, and subscription lifecycle insights',
     icon: <CreditCard size={24} />,
-    type: 'custom',
+    type: 'subscription-analytics',
     defaultFormat: 'excel',
     color: '#84cc16',
     available: true
   },
   {
-    id: 'payment-methods',
-    title: 'Payment Methods Analysis',
-    description: 'Breakdown of payment methods, success rates, and preferences',
+    id: 'payment-performance',
+    title: 'Payment Performance Report',
+    description: 'Success rates, failure analysis, and payment method trends',
     icon: <CreditCard size={24} />,
-    type: 'custom',
-    defaultFormat: 'csv',
+    type: 'payment-performance',
+    defaultFormat: 'excel',
     color: '#a855f7',
+    available: true
+  },
+  {
+    id: 'customer-insights',
+    title: 'Customer Insights Report',
+    description: 'Customer lifetime value, segmentation, and behavior analysis',
+    icon: <Users size={24} />,
+    type: 'customer-insights',
+    defaultFormat: 'excel',
+    color: '#f59e0b',
     available: true
   }
 ]
@@ -151,37 +171,23 @@ export default function ReportsPage() {
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch recent reports
-  const { data: recentReports } = useQuery({
-    queryKey: ['recentReports'],
-    queryFn: async () => {
-      // Mock recent reports - in real implementation, fetch from API
-      return [
-        {
-          id: '1',
-          name: 'Monthly Financial Report - November 2024',
-          type: 'monthly',
-          format: 'pdf',
-          generatedAt: new Date('2024-11-01'),
-          size: '2.4 MB'
-        },
-        {
-          id: '2',
-          name: 'Weekly Performance Report - Week 48',
-          type: 'weekly',
-          format: 'pdf',
-          generatedAt: new Date('2024-11-25'),
-          size: '1.2 MB'
-        },
-        {
-          id: '3',
-          name: 'Customer Analytics Report',
-          type: 'custom',
-          format: 'excel',
-          generatedAt: new Date('2024-11-20'),
-          size: '3.8 MB'
-        }
-      ]
+  // Recent reports will be stored in localStorage for now
+  const [recentReports, setRecentReports] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem('recentReports')
+      if (!stored) return []
+      
+      // Parse and validate dates
+      const reports = JSON.parse(stored)
+      return reports.map((report: any) => ({
+        ...report,
+        generatedAt: new Date(report.generatedAt)
+      })).filter((report: any) => !isNaN(report.generatedAt.getTime()))
+    } catch (error) {
+      console.error('Error loading recent reports:', error)
+      // Clear corrupted data
+      localStorage.removeItem('recentReports')
+      return []
     }
   })
 
@@ -258,9 +264,23 @@ export default function ReportsPage() {
       window.URL.revokeObjectURL(url)
 
       setDialogOpen(false)
-    } catch (err) {
+      
+      // Save to recent reports
+      const newReport = {
+        id: Date.now().toString(),
+        name: `${selectedReport.title} - ${format(dateRange.start, 'MMM dd')} to ${format(dateRange.end, 'MMM dd, yyyy')}`,
+        type: selectedReport.type,
+        format: reportFormat,
+        generatedAt: new Date(),
+        size: (blob.size / (1024 * 1024)).toFixed(2) + ' MB'
+      }
+      
+      const updatedReports = [newReport, ...recentReports.slice(0, 9)] // Keep last 10
+      setRecentReports(updatedReports)
+      localStorage.setItem('recentReports', JSON.stringify(updatedReports))
+    } catch (err: any) {
       console.error('Failed to generate report:', err)
-      setError('Failed to generate report. Please try again.')
+      setError(err.response?.data?.message || 'Failed to generate report. Please try again.')
     } finally {
       setGenerating(false)
     }
@@ -410,7 +430,10 @@ export default function ReportsPage() {
                         <Stack direction="row" spacing={2}>
                           <Typography variant="caption" color="text.secondary">
                             <Clock size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                            {format(report.generatedAt, 'MMM dd, yyyy HH:mm')}
+                            {report.generatedAt instanceof Date && !isNaN(report.generatedAt.getTime()) 
+                              ? format(report.generatedAt, 'MMM dd, yyyy HH:mm')
+                              : 'Unknown date'
+                            }
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {report.size}
@@ -478,12 +501,6 @@ export default function ReportsPage() {
                   onChange={(e) => setReportFormat(e.target.value as any)}
                   fullWidth
                 >
-                  <MenuItem value="pdf">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <File size={20} />
-                      <span>PDF</span>
-                    </Stack>
-                  </MenuItem>
                   <MenuItem value="excel">
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Table size={20} />
@@ -499,7 +516,6 @@ export default function ReportsPage() {
                 </TextField>
 
                 <Alert severity="info" icon={<Info size={20} />}>
-                  {reportFormat === 'pdf' && t('PDF reports include charts and visualizations')}
                   {reportFormat === 'excel' && t('Excel reports include multiple sheets with detailed data')}
                   {reportFormat === 'csv' && t('CSV reports provide raw data for further analysis')}
                 </Alert>

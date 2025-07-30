@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
 import { useTranslation } from 'react-i18next'
+import { useRouter } from 'next/navigation'
+import { NotificationDropdown } from '@/components/notifications/notification-dropdown'
 import {
   AppBar,
   Toolbar,
   IconButton,
   InputBase,
   Box,
-  Badge,
   Menu,
   MenuItem,
   alpha,
@@ -20,7 +21,6 @@ import {
 import {
   Menu as MenuIcon,
   Search,
-  Notifications,
   LightMode,
   DarkMode,
   Language,
@@ -85,6 +85,7 @@ interface TopbarProps {
 export function Topbar({ onMenuClick }: TopbarProps) {
   const { theme, setTheme } = useTheme()
   const { i18n, t } = useTranslation('common')
+  const router = useRouter()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
 
   const handleLanguageMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -159,13 +160,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           </Tooltip>
 
           {/* Notifications */}
-          <Tooltip title="Notifications">
-            <IconButton sx={{ color: 'action.active' }}>
-              <Badge badgeContent={4} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
-          </Tooltip>
+          <NotificationDropdown />
 
           <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 

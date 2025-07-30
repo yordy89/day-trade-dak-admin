@@ -57,6 +57,7 @@ const permissionLabels: Record<keyof PermissionSet, string> = {
   settings: 'Configuración',
   auditLogs: 'Logs de Auditoría',
   permissions: 'Permisos',
+  contactMessages: 'Mensajes de Contacto',
 }
 
 const permissionGroups = [
@@ -74,7 +75,7 @@ const permissionGroups = [
   },
   {
     title: 'Comunicación y Análisis',
-    permissions: ['announcements', 'analytics', 'reports'] as (keyof PermissionSet)[],
+    permissions: ['announcements', 'analytics', 'reports', 'contactMessages'] as (keyof PermissionSet)[],
   },
   {
     title: 'Administración',

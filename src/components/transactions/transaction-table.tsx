@@ -149,15 +149,39 @@ export function TransactionTable({
     router.push(`/users/${customerId}`)
   }
 
-  const handleGenerateInvoice = () => {
-    // TODO: Implement invoice generation
-    console.log('Generate invoice for', selectedTransaction)
+  const handleGenerateInvoice = async () => {
+    if (!selectedTransaction) return
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/transactions/${selectedTransaction}/invoice`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate invoice')
+      }
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `invoice-${selectedTransaction}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to generate invoice:', error)
+    }
+    
     handleMenuClose()
   }
 
   const handleRefund = () => {
-    // TODO: Implement refund
-    console.log('Refund transaction', selectedTransaction)
+    if (!selectedTransaction) return
+    router.push(`/transactions/${selectedTransaction}`)
     handleMenuClose()
   }
 

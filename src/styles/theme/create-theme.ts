@@ -282,6 +282,83 @@ export function createTheme(mode: 'light' | 'dark' = 'dark') {
           },
         },
       },
+      MuiInputBase: {
+        styleOverrides: {
+          root: {
+            '&.Mui-focused': {
+              outline: 'none !important',
+              boxShadow: 'none !important',
+            },
+            '& input': {
+              '&:focus': {
+                outline: 'none !important',
+                boxShadow: 'none !important',
+              },
+              '&:focus-visible': {
+                outline: 'none !important',
+              },
+              '&:-webkit-autofill': {
+                WebkitBoxShadow: mode === 'dark' 
+                  ? '0 0 0 1000px rgba(255, 255, 255, 0.08) inset !important'
+                  : '0 0 0 1000px rgba(0, 0, 0, 0.04) inset !important',
+                WebkitTextFillColor: mode === 'dark' 
+                  ? '#ffffff !important' 
+                  : 'rgba(0, 0, 0, 0.87) !important',
+                caretColor: mode === 'dark' 
+                  ? '#ffffff !important' 
+                  : 'rgba(0, 0, 0, 0.87) !important',
+                transition: 'background-color 5000s ease-in-out 0s',
+              },
+              '&:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
+                WebkitBoxShadow: mode === 'dark' 
+                  ? '0 0 0 1000px rgba(255, 255, 255, 0.08) inset !important'
+                  : '0 0 0 1000px rgba(0, 0, 0, 0.04) inset !important',
+                WebkitTextFillColor: mode === 'dark' 
+                  ? '#ffffff !important' 
+                  : 'rgba(0, 0, 0, 0.87) !important',
+              },
+            },
+            '& textarea': {
+              '&:focus': {
+                outline: 'none !important',
+                boxShadow: 'none !important',
+              },
+              '&:focus-visible': {
+                outline: 'none !important',
+              },
+              '&:-webkit-autofill': {
+                WebkitBoxShadow: mode === 'dark' 
+                  ? '0 0 0 1000px rgba(255, 255, 255, 0.08) inset !important'
+                  : '0 0 0 1000px rgba(0, 0, 0, 0.04) inset !important',
+                WebkitTextFillColor: mode === 'dark' 
+                  ? '#ffffff !important' 
+                  : 'rgba(0, 0, 0, 0.87) !important',
+              },
+            },
+          },
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+              borderWidth: 1,
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+            },
+          },
+          notchedOutline: {
+            borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+          },
+        },
+      },
+      MuiTextField: {
+        defaultProps: {
+          variant: 'outlined' as const,
+        },
+      },
     },
   });
 

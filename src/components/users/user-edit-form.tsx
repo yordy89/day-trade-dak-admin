@@ -40,6 +40,7 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     phone: '',
     role: 'user',
     status: 'active',
@@ -56,6 +57,7 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
         firstName: initialData.firstName || '',
         lastName: initialData.lastName || '',
         email: initialData.email || '',
+        password: '', // Password is not editable in edit mode
         phone: initialData.phone || '',
         role: initialData.role || 'user',
         status: initialData.status || 'active',
@@ -87,6 +89,13 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
+    }
+    
+    // Password is required only for new users
+    if (!userId && !formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (!userId && formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
     
     setErrors(newErrors);
@@ -163,6 +172,20 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
                   disabled={!!userId} // Can't change email for existing users
                 />
               </Grid>
+              {!userId && (
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Contraseña"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => handleChange('password', e.target.value)}
+                    error={!!errors.password}
+                    helperText={errors.password}
+                    required
+                  />
+                </Grid>
+              )}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth

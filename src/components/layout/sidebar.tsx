@@ -33,6 +33,7 @@ import {
   School,
   Security,
   Event,
+  Email,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/store/auth-store'
 import { usePermissionStore } from '@/store/permission-store'
@@ -55,6 +56,7 @@ const navigation: NavigationItem[] = [
   { name: 'payments', href: '/payments', icon: AttachMoney, permission: 'payments' },
   { name: 'meetings', href: '/meetings', icon: VideoCall, permission: 'meetings', featureFlag: 'meetings' },
   { name: 'events', href: '/events', icon: Event, permission: 'events' },
+  { name: 'contact_messages', href: '/contact-messages', icon: Email, permission: 'messages' },
   { name: 'content', href: '/content', icon: ContentPaste, permission: 'content' },
   { name: 'courses', href: '/courses', icon: School, permission: 'courses' },
   { name: 'announcements', href: '/announcements', icon: Campaign, permission: 'announcements' },
