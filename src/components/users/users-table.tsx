@@ -321,6 +321,28 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
       },
     },
     {
+      field: 'allowLiveWeeklyAccess',
+      headerName: t('columns.liveWeekly', 'Live Weekly'),
+      width: 120,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params: GridRenderCellParams) => {
+        const hasAccess = params.value || false
+        
+        return (
+          <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+            <Chip 
+              label={hasAccess ? t('access.granted', 'Granted') : t('access.denied', 'Denied')} 
+              size="small"
+              color={hasAccess ? 'warning' : 'default'}
+              variant={hasAccess ? 'filled' : 'outlined'}
+              sx={{ fontSize: '0.75rem', height: 24 }}
+            />
+          </Box>
+        )
+      },
+    },
+    {
       field: 'actions',
       headerName: t('columns.actions', 'Actions'),
       width: 80,

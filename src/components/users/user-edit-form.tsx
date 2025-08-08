@@ -48,6 +48,7 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
     city: '',
     country: '',
     allowLiveMeetingAccess: false,
+    allowLiveWeeklyAccess: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -65,6 +66,7 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
         city: initialData.city || '',
         country: initialData.country || '',
         allowLiveMeetingAccess: initialData.allowLiveMeetingAccess || false,
+        allowLiveWeeklyAccess: initialData.allowLiveWeeklyAccess || false,
       });
     }
   }, [initialData]);
@@ -265,6 +267,17 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
                     />
                   }
                   label="Permitir acceso a reuniones en vivo (sobrescribe restricciones de suscripción)"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.allowLiveWeeklyAccess}
+                      onChange={(e) => handleChange('allowLiveWeeklyAccess', e.target.checked)}
+                    />
+                  }
+                  label="Permitir compra de suscripciones Live Semanal (Live Weekly)"
                 />
               </Grid>
             </Grid>
