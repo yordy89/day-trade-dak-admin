@@ -15,6 +15,7 @@ export interface PermissionSet {
   auditLogs: boolean
   permissions?: boolean // Only visible for super_admin
   contactMessages: boolean
+  modulePermissions: boolean // New: Permisos de Módulos
 }
 
 export interface AdminUserWithPermissions {
@@ -44,6 +45,7 @@ export interface UpdatePermissionsRequest {
   auditLogs?: boolean
   permissions?: boolean
   contactMessages?: boolean
+  modulePermissions?: boolean
 }
 
 export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
@@ -63,6 +65,7 @@ export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
   auditLogs: false,
   permissions: false,
   contactMessages: true,
+  modulePermissions: false, // Admins don't get module permissions by default
 }
 
 export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
@@ -82,4 +85,5 @@ export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
   auditLogs: true,
   permissions: true,
   contactMessages: true,
+  modulePermissions: true, // Super admins have module permissions
 }

@@ -58,6 +58,7 @@ const permissionLabels: Record<keyof PermissionSet, string> = {
   auditLogs: 'Logs de Auditoría',
   permissions: 'Permisos',
   contactMessages: 'Mensajes de Contacto',
+  modulePermissions: 'Permisos de Módulos',
 }
 
 const permissionGroups = [
@@ -79,7 +80,7 @@ const permissionGroups = [
   },
   {
     title: 'Administración',
-    permissions: ['auditLogs', 'permissions'] as (keyof PermissionSet)[],
+    permissions: ['auditLogs', 'permissions', 'modulePermissions'] as (keyof PermissionSet)[],
   },
 ]
 
@@ -130,11 +131,27 @@ export default function PermissionsPage() {
     
     try {
       setIsSaving(true)
+      
+      // Debug: Log what we're sending
+      console.log('Saving permissions for user:', selectedUser._id)
+      console.log('Permissions being sent:', editedPermissions)
+      console.log('All keys present:', Object.keys(editedPermissions))
+      
       await permissionService.updateUserPermissions(selectedUser._id, editedPermissions)
       showSuccess('Permisos actualizados exitosamente')
-      fetchAdmins()
+      
+      // Refresh the data
+      await fetchAdmins()
+      
+      // Re-select the user to refresh the UI
+      const updatedAdmins = await permissionService.getAllAdminPermissions()
+      const updatedUser = updatedAdmins.find(u => u._id === selectedUser._id)
+      if (updatedUser) {
+        handleUserSelect(updatedUser)
+      }
     } catch (error: any) {
       showError(error.message || 'Error al actualizar permisos')
+      console.error('Error saving permissions:', error)
     } finally {
       setIsSaving(false)
     }
