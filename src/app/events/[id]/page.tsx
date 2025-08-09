@@ -48,11 +48,14 @@ import { useSnackbar } from '@/hooks/use-snackbar'
 import type { Event, EventRegistration } from '@/types/event'
 import { PageHeader } from '@/components/page-header'
 import { AdminLayout } from '@/components/layout/admin-layout'
+import { useAuthStore } from '@/store/auth-store'
 
 export default function EventDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { showSuccess, showError } = useSnackbar()
+  const currentUser = useAuthStore((state) => state.user)
+  const isSuperAdmin = currentUser?.role === 'super_admin'
   
   const eventId = params.id as string
 
@@ -324,20 +327,20 @@ export default function EventDetailPage() {
         )
       },
     },
-    {
+    ...(isSuperAdmin ? [{
       field: 'paymentAmount',
       headerName: 'Monto',
       flex: 0.5,
       minWidth: 90,
       maxWidth: 120,
-      align: 'right',
-      headerAlign: 'right',
-      renderCell: (params) => (
+      align: 'right' as const,
+      headerAlign: 'right' as const,
+      renderCell: (params: any) => (
         <Typography variant="body2" fontWeight={600} color="success.main">
           ${(params.value || params.row.amount || 0).toFixed(2)}
         </Typography>
       ),
-    },
+    }] : []),
     {
       field: 'paymentStatus',
       headerName: 'Estado de Pago',
@@ -630,10 +633,14 @@ export default function EventDetailPage() {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography color="text.secondary" variant="body2">
-                    Ingresos Totales
+                    {isSuperAdmin ? 'Ingresos Totales' : 'Registros Pagados'}
                   </Typography>
                   <Typography variant="h4" fontWeight={600}>
-                    ${(statistics?.totalRevenue || 0).toFixed(2)}
+                    {isSuperAdmin ? (
+                      `$${(statistics?.totalRevenue || 0).toFixed(2)}`
+                    ) : (
+                      statistics?.paidRegistrations || '0'
+                    )}
                   </Typography>
                 </Box>
                 <AttachMoney sx={{ fontSize: 40, color: 'success.main', opacity: 0.3 }} />

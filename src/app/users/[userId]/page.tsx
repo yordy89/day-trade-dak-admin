@@ -29,6 +29,7 @@ import { UserSubscriptionsTab } from '@/components/users/user-subscriptions-tab'
 import { UserActivityTab } from '@/components/users/user-activity-tab'
 import { toast } from 'react-hot-toast'
 import { userService } from '@/services/user.service'
+import { AdminLayout } from '@/components/layout/admin-layout'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -100,104 +101,110 @@ export default function UserDetailsPage() {
 
   if (isLoading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box display="flex" alignItems="center" gap={2} mb={3}>
-          <Skeleton variant="circular" width={40} height={40} />
-          <Skeleton variant="text" width={200} height={32} />
+      <AdminLayout>
+        <Box sx={{ p: 3 }}>
+          <Box display="flex" alignItems="center" gap={2} mb={3}>
+            <Skeleton variant="circular" width={40} height={40} />
+            <Skeleton variant="text" width={200} height={32} />
+          </Box>
+          <Paper>
+            <Skeleton variant="rectangular" height={400} />
+          </Paper>
         </Box>
-        <Paper>
-          <Skeleton variant="rectangular" height={400} />
-        </Paper>
-      </Container>
+      </AdminLayout>
     )
   }
 
   if (error || !user) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error">
-          {t('messages.userNotFound', 'User not found')}
-        </Alert>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => router.push('/users')}
-          sx={{ mt: 2 }}
-        >
-          {t('actions.back', 'Back to Users')}
-        </Button>
-      </Container>
+      <AdminLayout>
+        <Box sx={{ p: 3 }}>
+          <Alert severity="error">
+            {t('messages.userNotFound', 'User not found')}
+          </Alert>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => router.push('/users')}
+            sx={{ mt: 2 }}
+          >
+            {t('actions.back', 'Back to Users')}
+          </Button>
+        </Box>
+      </AdminLayout>
     )
   }
 
   const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <IconButton onClick={() => router.push('/users')} size="small">
-            <ArrowBack />
-          </IconButton>
-          <Typography variant="h4" fontWeight={600}>
-            {fullName}
-          </Typography>
+    <AdminLayout>
+      <Box sx={{ p: 3 }}>
+        {/* Header */}
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <IconButton onClick={() => router.push('/users')} size="small">
+              <ArrowBack />
+            </IconButton>
+            <Typography variant="h4" fontWeight={600}>
+              {fullName}
+            </Typography>
+          </Box>
+          <Box display="flex" gap={1}>
+            <Button
+              variant="outlined"
+              startIcon={<Email />}
+              onClick={() => router.push(`/communications/email?userId=${userId}`)}
+            >
+              {t('actions.sendEmail', 'Send Email')}
+            </Button>
+            <Button
+              variant="outlined"
+              color={user.status === 'active' ? 'error' : 'success'}
+              startIcon={user.status === 'active' ? <Block /> : <CheckCircle />}
+              onClick={handleStatusToggle}
+            >
+              {user.status === 'active' ? t('actions.ban', 'Ban User') : t('actions.activate', 'Activate User')}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Edit />}
+              onClick={handleEdit}
+            >
+              {t('actions.edit', 'Edit')}
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<Delete />}
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {t('actions.delete', 'Delete')}
+            </Button>
+          </Box>
         </Box>
-        <Box display="flex" gap={1}>
-          <Button
-            variant="outlined"
-            startIcon={<Email />}
-            onClick={() => router.push(`/communications/email?userId=${userId}`)}
-          >
-            {t('actions.sendEmail', 'Send Email')}
-          </Button>
-          <Button
-            variant="outlined"
-            color={user.status === 'active' ? 'error' : 'success'}
-            startIcon={user.status === 'active' ? <Block /> : <CheckCircle />}
-            onClick={handleStatusToggle}
-          >
-            {user.status === 'active' ? t('actions.ban', 'Ban User') : t('actions.activate', 'Activate User')}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Edit />}
-            onClick={handleEdit}
-          >
-            {t('actions.edit', 'Edit')}
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Delete />}
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {t('actions.delete', 'Delete')}
-          </Button>
-        </Box>
+
+        {/* Content */}
+        <Paper>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs value={activeTab} onChange={handleTabChange}>
+              <Tab label={t('tabs.details', 'Details')} />
+              <Tab label={t('tabs.subscriptions', 'Subscriptions')} />
+              <Tab label={t('tabs.activity', 'Activity')} />
+            </Tabs>
+          </Box>
+
+          <TabPanel value={activeTab} index={0}>
+            <UserDetailsTab user={user} />
+          </TabPanel>
+          <TabPanel value={activeTab} index={1}>
+            <UserSubscriptionsTab userId={userId} subscriptions={user.subscriptions} />
+          </TabPanel>
+          <TabPanel value={activeTab} index={2}>
+            <UserActivityTab userId={userId} />
+          </TabPanel>
+        </Paper>
       </Box>
-
-      {/* Content */}
-      <Paper>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label={t('tabs.details', 'Details')} />
-            <Tab label={t('tabs.subscriptions', 'Subscriptions')} />
-            <Tab label={t('tabs.activity', 'Activity')} />
-          </Tabs>
-        </Box>
-
-        <TabPanel value={activeTab} index={0}>
-          <UserDetailsTab user={user} />
-        </TabPanel>
-        <TabPanel value={activeTab} index={1}>
-          <UserSubscriptionsTab userId={userId} subscriptions={user.subscriptions} />
-        </TabPanel>
-        <TabPanel value={activeTab} index={2}>
-          <UserActivityTab userId={userId} />
-        </TabPanel>
-      </Paper>
-    </Container>
+    </AdminLayout>
   )
 }

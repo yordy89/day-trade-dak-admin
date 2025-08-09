@@ -187,17 +187,25 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
       headerName: t('columns.status', 'Status'),
       width: 120,
       renderCell: (params: GridRenderCellParams) => {
+        // First check the user's actual status field
+        const userStatus = params.row.status
+        const isActive = userStatus === 'active'
+        
+        // Optionally also check if they have active subscriptions
         const subscriptions = params.row.subscriptions || []
         const hasActiveSubscriptions = subscriptions.some((sub: any) => 
           !sub.expiresAt || new Date(sub.expiresAt) > new Date()
         )
         
+        // User is active if their status is 'active' OR they have active subscriptions
+        const isUserActive = isActive || hasActiveSubscriptions
+        
         return (
           <Chip 
-            label={hasActiveSubscriptions ? t('status.active', 'Active') : t('status.inactive', 'Inactive')} 
+            label={isUserActive ? t('status.active', 'Active') : t('status.inactive', 'Inactive')} 
             size="small"
-            color={hasActiveSubscriptions ? 'success' : 'default'}
-            variant={hasActiveSubscriptions ? 'filled' : 'outlined'}
+            color={isUserActive ? 'success' : 'default'}
+            variant={isUserActive ? 'filled' : 'outlined'}
           />
         )
       },

@@ -25,6 +25,7 @@ import { Save, Cancel } from '@mui/icons-material';
 import { useSnackbar } from '@/hooks/use-snackbar';
 import { userService } from '@/services/user.service';
 import { UserModulePermissionsSection } from './user-module-permissions-section';
+import { useAuthStore } from '@/store/auth-store';
 
 interface UserEditFormProps {
   userId?: string;
@@ -35,6 +36,8 @@ interface UserEditFormProps {
 export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProps) {
   const router = useRouter();
   const { showSuccess, showError } = useSnackbar();
+  const currentUser = useAuthStore((state) => state.user);
+  const isSuperAdmin = currentUser?.role === 'super_admin';
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -240,12 +243,25 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
                     value={formData.role}
                     label="Rol"
                     onChange={(e) => handleChange('role', e.target.value)}
+                    disabled={!isSuperAdmin && userId !== undefined} // Only super_admin can edit roles
                   >
                     <MenuItem value="user">Usuario</MenuItem>
-                    <MenuItem value="admin">Administrador</MenuItem>
-                    <MenuItem value="super_admin">Super Administrador</MenuItem>
+                    {/* Show admin/super_admin options if: 
+                        1. Current logged-in user is super_admin (can assign these roles), OR
+                        2. The user being edited already has these roles (to display current value) */}
+                    {(isSuperAdmin || formData.role === 'admin') && (
+                      <MenuItem value="admin">Administrador</MenuItem>
+                    )}
+                    {(isSuperAdmin || formData.role === 'super_admin') && (
+                      <MenuItem value="super_admin">Super Administrador</MenuItem>
+                    )}
                   </Select>
                 </FormControl>
+                {!isSuperAdmin && userId && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Solo Super Administradores pueden cambiar roles
+                  </Typography>
+                )}
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControlLabel

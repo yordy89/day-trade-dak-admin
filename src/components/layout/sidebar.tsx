@@ -53,12 +53,10 @@ const navigation: NavigationItem[] = [
   { name: 'dashboard', href: '/', icon: Dashboard, permission: 'dashboard' },
   { name: 'users', href: '/users', icon: People, permission: 'users' },
   { name: 'subscriptions', href: '/subscriptions', icon: CreditCard, permission: 'subscriptions' },
-  { name: 'payments', href: '/payments', icon: AttachMoney, permission: 'payments' },
   { name: 'meetings', href: '/meetings', icon: VideoCall, permission: 'meetings', featureFlag: 'meetings' },
   { name: 'events', href: '/events', icon: Event, permission: 'events' },
   { name: 'contact_messages', href: '/contact-messages', icon: Email, permission: 'messages' },
   { name: 'content', href: '/content', icon: ContentPaste, permission: 'content' },
-  { name: 'courses', href: '/courses', icon: School, permission: 'courses' },
   { name: 'announcements', href: '/announcements', icon: Campaign, permission: 'announcements' },
   { name: 'analytics', href: '/analytics', icon: BarChart, permission: 'analytics' },
   { name: 'transactions', href: '/transactions', icon: AttachMoney, permission: 'transactions' },
@@ -67,7 +65,7 @@ const navigation: NavigationItem[] = [
 
 const bottomNavigation: NavigationItem[] = [
   { name: 'settings', href: '/settings', icon: Settings, permission: 'settings' },
-  { name: 'audit_logs', href: '/audit-logs', icon: Security, permission: 'auditLogs' },
+  // { name: 'audit_logs', href: '/audit-logs', icon: Security, permission: 'auditLogs' }, // Removed - no page
   { name: 'permissions', href: '/permissions', icon: Shield, permission: 'permissions' },
   { name: 'module_permissions', href: '/module-permissions', icon: Security, permission: 'permissions' },
 ]
