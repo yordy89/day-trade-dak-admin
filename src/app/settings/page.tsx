@@ -16,6 +16,7 @@ import { ContactSettings } from '@/components/settings/contact-settings'
 import { FooterSettings } from '@/components/settings/footer-settings'
 import { BrandingSettings } from '@/components/settings/branding-settings'
 import { NotificationEmails } from '@/components/settings/notification-emails'
+import { TradingSettings } from '@/components/settings/trading-settings'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -64,6 +65,7 @@ export default function SettingsPage() {
         SettingCategory.FOOTER,
         SettingCategory.BRANDING,
         SettingCategory.NOTIFICATIONS,
+        SettingCategory.TRADING,
       ]
       return settingsService.getSettingsByCategory(categories[activeTab])
     },
@@ -118,14 +120,14 @@ export default function SettingsPage() {
     setHasChanges(true)
   }
 
-  const handleSaveAll = (settingsToSave: any[]) => {
+  const handleSaveAll = async (settingsToSave: any[]): Promise<void> => {
     const bulkUpdate = {
       settings: settingsToSave.map(setting => ({
         key: setting.key,
         value: setting.value,
       })),
     }
-    bulkUpdateMutation.mutate(bulkUpdate)
+    return bulkUpdateMutation.mutateAsync(bulkUpdate)
   }
 
   const handleResetDefaults = async () => {
@@ -196,6 +198,12 @@ export default function SettingsPage() {
       onSave={handleSaveAll}
     />,
     <NotificationEmails key="notifications" />,
+    <TradingSettings
+      key="trading"
+      settings={settings || []}
+      onSave={handleSaveAll}
+      loading={bulkUpdateMutation.isPending}
+    />,
   ]
 
   return (
@@ -240,6 +248,7 @@ export default function SettingsPage() {
             <Tab label="Footer" {...a11yProps(3)} />
             <Tab label="Branding" {...a11yProps(4)} />
             <Tab label="Notifications" {...a11yProps(5)} />
+            <Tab label="Trading" {...a11yProps(6)} />
           </Tabs>
         </Box>
 
