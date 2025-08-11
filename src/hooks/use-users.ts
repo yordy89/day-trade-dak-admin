@@ -15,11 +15,29 @@ interface UseUsersParams {
 export function useUsers(params: UseUsersParams = {}) {
   const queryClient = useQueryClient()
 
+  // Create a stable query key
+  const queryKey = [
+    'users',
+    params.page || 1,
+    params.limit || 25,
+    params.search || '',
+    params.status || 'all',
+    params.subscription || 'all',
+    params.role || 'all',
+    params.sortBy || 'createdAt',
+    params.sortOrder || 'desc',
+  ]
+
   const query = useQuery({
-    queryKey: ['users', params],
+    queryKey,
     queryFn: () => userService.getUsers(params),
     retry: 1,
-    staleTime: 30000, // 30 seconds
+    staleTime: 5000, // 5 seconds
+    gcTime: 60000, // 1 minute (keep in cache longer)
+    refetchOnWindowFocus: false, // Prevent refetch on window focus
+    refetchOnMount: true, // Fetch on mount
+    enabled: true, // Always enabled
+    networkMode: 'offlineFirst', // Use cache first
   })
 
   const deleteUserMutation = useMutation({

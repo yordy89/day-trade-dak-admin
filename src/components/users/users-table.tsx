@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   DataGrid, 
@@ -51,20 +51,48 @@ interface UsersTableProps {
 export function UsersTable({ searchQuery, filters }: UsersTableProps) {
   const { t } = useTranslation('users')
   const router = useRouter()
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+  
+  // Initialize pagination with a stable default
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>(() => ({
     page: 0,
     pageSize: 25,
-  })
+  }))
   const [sortModel, setSortModel] = useState<GridSortModel>([])
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [selectedUser, setSelectedUser] = useState<any>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true)
+  
+  // Track previous filter values to detect changes
+  const prevFiltersRef = useRef({ searchQuery, ...filters })
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+  
+  // Reset pagination when filters change
+  useEffect(() => {
+    const currentFilters = { searchQuery, ...filters }
+    const filtersChanged = JSON.stringify(prevFiltersRef.current) !== JSON.stringify(currentFilters)
+    
+    if (filtersChanged && isMountedRef.current) {
+      setPaginationModel(prev => ({ ...prev, page: 0 }))
+      prevFiltersRef.current = currentFilters
+    }
+  }, [searchQuery, filters])
 
   const { data, isLoading, deleteUser, updateUserStatus } = useUsers({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
     search: searchQuery,
-    ...filters,
+    status: filters.status,
+    subscription: filters.subscription,
+    role: filters.role,
     sortBy: sortModel[0]?.field,
     sortOrder: sortModel[0]?.sort as 'asc' | 'desc' | undefined,
   })
@@ -398,16 +426,33 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
   ], [t, anchorEl, selectedUser])
 
+  // Create a stable key for the DataGrid based on filters
+  const dataGridKey = useMemo(() => {
+    return `${filters.status}-${filters.subscription}-${filters.role}`
+  }, [filters])
+
+  // Handle pagination change
+  const handlePaginationModelChange = useCallback((newModel: GridPaginationModel) => {
+    // Only update if actually changed to prevent unnecessary re-renders
+    setPaginationModel(current => {
+      if (current.page === newModel.page && current.pageSize === newModel.pageSize) {
+        return current
+      }
+      return newModel
+    })
+  }, [])
+
   return (
     <>
       <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid
+          key={dataGridKey}
           rows={data?.users || []}
           columns={columns}
           getRowId={(row) => row._id}
           loading={isLoading}
           paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
+          onPaginationModelChange={handlePaginationModelChange}
           sortModel={sortModel}
           onSortModelChange={setSortModel}
           pageSizeOptions={[10, 25, 50, 100]}
@@ -416,6 +461,8 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
           sortingMode="server"
           disableRowSelectionOnClick
           disableColumnMenu
+          keepNonExistentRowsSelected={false}
+          autoHeight={false}
           sx={{
             '& .MuiDataGrid-cell:focus': {
               outline: 'none',
