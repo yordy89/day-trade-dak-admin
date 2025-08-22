@@ -8,6 +8,7 @@ export enum ModuleType {
   COMMUNITY_EVENTS = 'communityEvents',
   VIP_EVENTS = 'vipEvents',
   MASTER_COURSE = 'masterCourse',
+  STOCKS = 'stocks',
 }
 
 export interface ModulePermission {
@@ -69,4 +70,5 @@ export const MODULE_DISPLAY_NAMES: Record<ModuleType, { es: string; en: string }
   [ModuleType.COMMUNITY_EVENTS]: { es: 'Eventos Comunitarios', en: 'Community Events' },
   [ModuleType.VIP_EVENTS]: { es: 'Eventos VIP', en: 'VIP Events' },
   [ModuleType.MASTER_COURSE]: { es: 'Master Course', en: 'Master Course' },
+  [ModuleType.STOCKS]: { es: 'Acciones', en: 'Stocks' },
 }

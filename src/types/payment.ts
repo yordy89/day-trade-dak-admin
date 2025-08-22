@@ -44,6 +44,7 @@ export enum SubscriptionPlan {
   MASTER_CLASES = 'masterclases',
   LIVE_RECORDED = 'liverecorded',
   PSICOTRADING = 'psicotrading',
+  STOCKS = 'stocks',
   
   // One-time Purchases
   CLASES = 'clases',
@@ -113,6 +114,15 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionPlanInfo> 
     description: 'Trading psychology and mindset coaching',
     features: ['Weekly coaching sessions', 'Personal development', 'Trading psychology'],
     color: '#f97316'
+  },
+  [SubscriptionPlan.STOCKS]: {
+    id: SubscriptionPlan.STOCKS,
+    name: 'Stocks Trading',
+    price: 399,
+    billingCycle: BillingCycle.MONTHLY,
+    description: 'Stock market trading strategies and analysis',
+    features: ['Stock analysis', 'Market research', 'Portfolio management'],
+    color: '#3b82f6'
   },
   [SubscriptionPlan.CLASES]: {
     id: SubscriptionPlan.CLASES,

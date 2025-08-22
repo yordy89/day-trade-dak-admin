@@ -1,0 +1,113 @@
+{
+  "title": "Gestión de Afiliados",
+  "subtitle": "Administra socios afiliados y sus comisiones",
+  "tabs": {
+    "affiliates": "Afiliados",
+    "commissions": "Comisiones"
+  },
+  "stats": {
+    "total": "Total de Afiliados",
+    "active": "Activos",
+    "owed": "Comisión Adeudada",
+    "lifetime": "Total Pagado"
+  },
+  "table": {
+    "code": "Código",
+    "name": "Nombre",
+    "email": "Correo",
+    "phone": "Teléfono",
+    "discount": "Descuento",
+    "commission": "Comisión",
+    "totalSales": "Ventas Totales",
+    "totalCommission": "Comisión Total",
+    "status": "Estado",
+    "actions": "Acciones",
+    "type": "Tipo",
+    "amount": "Monto"
+  },
+  "buttons": {
+    "new": "Nuevo Afiliado",
+    "export": "Exportar",
+    "sync": "Sincronizar con Stripe",
+    "viewDetails": "Ver Detalles",
+    "markPaid": "Marcar como Pagado",
+    "edit": "Editar",
+    "deactivate": "Desactivar",
+    "activate": "Activar"
+  },
+  "dialog": {
+    "title": "Nuevo Afiliado",
+    "editTitle": "Editar Afiliado",
+    "fields": {
+      "code": "Código de Afiliado",
+      "name": "Nombre Completo",
+      "email": "Correo Electrónico",
+      "phone": "Número de Teléfono",
+      "discountType": "Tipo de Descuento",
+      "discountPercentage": "Porcentaje de Descuento",
+      "discountAmount": "Monto Fijo de Descuento",
+      "commissionType": "Tipo de Comisión",
+      "commissionRate": "Tasa de Comisión (%)",
+      "commissionAmount": "Monto Fijo de Comisión",
+      "isActive": "Activo"
+    },
+    "types": {
+      "percentage": "Porcentaje",
+      "fixed": "Monto Fijo"
+    },
+    "placeholders": {
+      "code": "Ingrese código único",
+      "name": "Ingrese nombre completo",
+      "email": "afiliado@ejemplo.com",
+      "phone": "+1 234 567 8900",
+      "percentage": "ej., 10",
+      "amount": "ej., 50.00"
+    },
+    "validation": {
+      "required": "Este campo es requerido",
+      "invalidEmail": "Correo electrónico inválido",
+      "duplicateCode": "Este código ya existe",
+      "invalidPercentage": "Debe estar entre 0 y 100",
+      "invalidAmount": "Debe ser un número positivo"
+    }
+  },
+  "commission": {
+    "title": "Detalles de Comisión",
+    "affiliate": "Afiliado",
+    "transaction": "Transacción",
+    "customer": "Cliente",
+    "amount": "Monto de Comisión",
+    "status": "Estado",
+    "date": "Fecha",
+    "paymentDate": "Fecha de Pago",
+    "originalAmount": "Monto Original",
+    "note": "Nota"
+  },
+  "status": {
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "pending": "Pendiente",
+    "approved": "Aprobado",
+    "paid": "Pagado",
+    "cancelled": "Cancelado"
+  },
+  "messages": {
+    "created": "Afiliado creado exitosamente",
+    "updated": "Afiliado actualizado exitosamente",
+    "deleted": "Afiliado eliminado exitosamente",
+    "synced": "Sincronizado con Stripe exitosamente",
+    "commissionPaid": "Comisión marcada como pagada",
+    "error": "Ocurrió un error. Por favor intente nuevamente."
+  },
+  "empty": {
+    "title": "No se encontraron afiliados",
+    "message": "Comienza creando tu primer socio afiliado",
+    "commissions": "No hay comisiones para mostrar"
+  },
+  "filters": {
+    "all": "Todos",
+    "active": "Activos",
+    "inactive": "Inactivos",
+    "search": "Buscar afiliados..."
+  }
+}

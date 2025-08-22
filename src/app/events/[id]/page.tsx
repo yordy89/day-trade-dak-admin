@@ -109,12 +109,14 @@ export default function EventDetailPage() {
         search: searchTerm,
         paymentStatus: paymentStatusFilter,
       })
+      // The backend returns { registrations, total, page, limit }
+      const registrationsData = response.registrations || []
       // Map service registrations to local type
-      const mappedRegistrations: EventRegistration[] = (response.registrations || []).map((reg: any) => ({
+      const mappedRegistrations: EventRegistration[] = registrationsData.map((reg: any) => ({
         ...reg,
-        userId: reg.user,  // Map user to userId
-        amount: reg.paymentAmount,  // Map paymentAmount to amount
-        registeredAt: reg.registrationDate || reg.createdAt,  // Map registrationDate to registeredAt
+        userId: reg.user || reg.userId,  // Map user to userId
+        amount: reg.amount || reg.paymentAmount || reg.amountPaid,  // Map paymentAmount to amount
+        registeredAt: reg.registeredAt || reg.registrationDate || reg.createdAt,  // Map registrationDate to registeredAt
       }))
       setRegistrations(mappedRegistrations)
       setTotalRegistrations(response.total || 0)
@@ -173,18 +175,24 @@ export default function EventDetailPage() {
         let lastName = ''
         let email = ''
         
-        if (params.row.user && typeof params.row.user === 'object') {
-          firstName = params.row.user.firstName || ''
-          lastName = params.row.user.lastName || ''
-          email = params.row.user.email || ''
-        } else if (params.row.userId && typeof params.row.userId === 'object') {
-          firstName = params.row.userId.firstName || ''
-          lastName = params.row.userId.lastName || ''
-          email = params.row.userId.email || ''
-        } else {
-          firstName = params.row.firstName || ''
-          lastName = params.row.lastName || ''
-          email = params.row.email || ''
+        // ALWAYS prioritize the registration's direct fields first
+        // These contain the actual registrant's information
+        firstName = params.row.firstName || ''
+        lastName = params.row.lastName || ''
+        email = params.row.email || ''
+        
+        // Only fall back to user object if direct fields are empty
+        // (for backwards compatibility with older registrations)
+        if (!firstName && !lastName && !email) {
+          if (params.row.userId && typeof params.row.userId === 'object') {
+            firstName = params.row.userId.firstName || ''
+            lastName = params.row.userId.lastName || ''
+            email = params.row.userId.email || ''
+          } else if (params.row.user && typeof params.row.user === 'object') {
+            firstName = params.row.user.firstName || ''
+            lastName = params.row.user.lastName || ''
+            email = params.row.user.email || ''
+          }
         }
         
         const fullName = `${firstName} ${lastName}`.trim()
@@ -235,18 +243,23 @@ export default function EventDetailPage() {
       minWidth: 160,
       maxWidth: 200,
       renderCell: (params) => {
-        let phone = 'N/A'
+        let phone = ''
         
-        // Check all possible phone field locations
-        if (params.row.user && typeof params.row.user === 'object') {
-          phone = params.row.user.phone || params.row.user.phoneNumber || 'N/A'
-        } else if (params.row.userId && typeof params.row.userId === 'object') {
-          phone = params.row.userId.phone || params.row.userId.phoneNumber || 'N/A'
+        // ALWAYS prioritize the registration's direct fields first
+        phone = params.row.phoneNumber || params.row.phone || ''
+        
+        // Only fall back to user object if direct field is empty
+        if (!phone) {
+          if (params.row.userId && typeof params.row.userId === 'object') {
+            phone = params.row.userId.phone || params.row.userId.phoneNumber || ''
+          } else if (params.row.user && typeof params.row.user === 'object') {
+            phone = params.row.user.phone || params.row.user.phoneNumber || ''
+          }
         }
         
-        // Also check top-level fields
-        if (phone === 'N/A') {
-          phone = params.row.phoneNumber || params.row.phone || 'N/A'
+        // Default to N/A if still no phone
+        if (!phone) {
+          phone = 'N/A'
         }
         
         return (

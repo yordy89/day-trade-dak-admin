@@ -17,6 +17,11 @@ import {
   styled,
   Tooltip,
   Divider,
+  Typography,
+  ListItemIcon,
+  ListItemText,
+  Button,
+  Avatar,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -25,6 +30,8 @@ import {
   DarkMode,
   Language,
   AccountCircle,
+  Check,
+  KeyboardArrowDown,
 } from '@mui/icons-material'
 
 const SearchWrapper = styled('div')(({ theme }) => ({
@@ -78,6 +85,24 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }))
 
+// Language configuration with flags
+const languages = [
+  {
+    code: 'en',
+    name: 'English',
+    nativeName: 'English',
+    flag: '🇺🇸',
+    flagUrl: 'https://flagcdn.com/w40/us.png',
+  },
+  {
+    code: 'es',
+    name: 'Spanish',
+    nativeName: 'Español',
+    flag: '🇪🇸',
+    flagUrl: 'https://flagcdn.com/w40/es.png',
+  },
+]
+
 interface TopbarProps {
   onMenuClick: () => void
 }
@@ -87,6 +112,8 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const { i18n, t } = useTranslation('common')
   const router = useRouter()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+
+  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0]
 
   const handleLanguageMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
@@ -149,15 +176,40 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             </IconButton>
           </Tooltip>
 
-          {/* Language selector */}
-          <Tooltip title="Change language">
-            <IconButton
-              onClick={handleLanguageMenuOpen}
-              sx={{ color: 'action.active' }}
-            >
-              <Language />
-            </IconButton>
-          </Tooltip>
+          {/* Enhanced Language selector */}
+          <Button
+            onClick={handleLanguageMenuOpen}
+            startIcon={
+              <Box
+                component="img"
+                src={currentLanguage.flagUrl}
+                alt={currentLanguage.name}
+                sx={{
+                  width: 20,
+                  height: 15,
+                  borderRadius: '2px',
+                  objectFit: 'cover',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              />
+            }
+            endIcon={<KeyboardArrowDown />}
+            sx={{
+              color: 'text.primary',
+              textTransform: 'none',
+              px: 1.5,
+              py: 0.5,
+              minWidth: 'auto',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
+            }}
+          >
+            <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+              {currentLanguage.nativeName}
+            </Typography>
+          </Button>
 
           {/* Notifications */}
           <NotificationDropdown />
@@ -172,7 +224,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           </Tooltip>
         </Box>
 
-        {/* Language Menu */}
+        {/* Enhanced Language Menu */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -185,19 +237,77 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             vertical: 'top',
             horizontal: 'right',
           }}
+          PaperProps={{
+            elevation: 3,
+            sx: {
+              minWidth: 180,
+              mt: 1.5,
+              '& .MuiMenuItem-root': {
+                px: 2,
+                py: 1,
+                borderRadius: 0.5,
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+                '&.Mui-selected': {
+                  backgroundColor: alpha('#1976d2', 0.08),
+                  '&:hover': {
+                    backgroundColor: alpha('#1976d2', 0.12),
+                  },
+                },
+              },
+            },
+          }}
         >
-          <MenuItem
-            onClick={() => handleLanguageChange('en')}
-            selected={i18n.language === 'en'}
-          >
-            English
-          </MenuItem>
-          <MenuItem
-            onClick={() => handleLanguageChange('es')}
-            selected={i18n.language === 'es'}
-          >
-            Español
-          </MenuItem>
+          {languages.map((language) => (
+            <MenuItem
+              key={language.code}
+              onClick={() => handleLanguageChange(language.code)}
+              selected={i18n.language === language.code}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 'auto !important' }}>
+                <Box
+                  component="img"
+                  src={language.flagUrl}
+                  alt={language.name}
+                  sx={{
+                    width: 24,
+                    height: 18,
+                    borderRadius: '3px',
+                    objectFit: 'cover',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                />
+              </ListItemIcon>
+              <ListItemText
+                primary={language.nativeName}
+                secondary={language.name}
+                primaryTypographyProps={{
+                  fontSize: '0.875rem',
+                  fontWeight: i18n.language === language.code ? 600 : 400,
+                }}
+                secondaryTypographyProps={{
+                  fontSize: '0.75rem',
+                  color: 'text.secondary',
+                }}
+              />
+              {i18n.language === language.code && (
+                <Check
+                  sx={{
+                    fontSize: 18,
+                    color: 'primary.main',
+                    ml: 'auto',
+                  }}
+                />
+              )}
+            </MenuItem>
+          ))}
         </Menu>
       </Toolbar>
     </AppBar>

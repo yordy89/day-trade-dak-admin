@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Box,
   Card,
@@ -41,10 +40,52 @@ import { PageHeader } from '@/components/page-header'
 import { usePermissionService } from '@/services/permission.service'
 import { useSnackbar } from '@/hooks/use-snackbar'
 import { AdminUserWithPermissions, PermissionSet } from '@/types/permission'
-import { Grid } from '@mui/material'
+
+const permissionLabels: Record<keyof PermissionSet, string> = {
+  dashboard: 'Dashboard',
+  users: 'Usuarios',
+  subscriptions: 'Suscripciones',
+  payments: 'Pagos',
+  meetings: 'Reuniones',
+  events: 'Eventos',
+  content: 'Contenido',
+  courses: 'Cursos',
+  announcements: 'Anuncios',
+  analytics: 'Analítica',
+  transactions: 'Transacciones',
+  reports: 'Reportes',
+  settings: 'Configuración',
+  auditLogs: 'Logs de Auditoría',
+  permissions: 'Permisos',
+  contactMessages: 'Mensajes de Contacto',
+  modulePermissions: 'Permisos de Módulos',
+  affiliates: 'Afiliados',
+}
+
+const permissionGroups = [
+  {
+    title: 'Gestión General',
+    permissions: ['dashboard', 'users', 'settings'] as (keyof PermissionSet)[],
+  },
+  {
+    title: 'Suscripciones y Pagos',
+    permissions: ['subscriptions', 'payments', 'transactions', 'affiliates'] as (keyof PermissionSet)[],
+  },
+  {
+    title: 'Contenido y Educación',
+    permissions: ['content', 'courses', 'meetings', 'events'] as (keyof PermissionSet)[],
+  },
+  {
+    title: 'Comunicación y Análisis',
+    permissions: ['announcements', 'analytics', 'reports', 'contactMessages'] as (keyof PermissionSet)[],
+  },
+  {
+    title: 'Administración',
+    permissions: ['auditLogs', 'permissions', 'modulePermissions'] as (keyof PermissionSet)[],
+  },
+]
 
 export default function PermissionsPage() {
-  const { t } = useTranslation(['permissions', 'common'])
   const permissionService = usePermissionService()
   const { showSuccess, showError } = useSnackbar()
   
@@ -55,57 +96,13 @@ export default function PermissionsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
 
-  const permissionLabels: Record<keyof PermissionSet, string> = {
-    dashboard: t('permissions:permissions.dashboard'),
-    users: t('permissions:permissions.users'),
-    subscriptions: t('permissions:permissions.subscriptions'),
-    payments: t('permissions:permissions.payments'),
-    meetings: t('permissions:permissions.meetings'),
-    events: t('permissions:permissions.events'),
-    content: t('permissions:permissions.content'),
-    courses: t('permissions:permissions.courses'),
-    announcements: t('permissions:permissions.announcements'),
-    analytics: t('permissions:permissions.analytics'),
-    transactions: t('permissions:permissions.transactions'),
-    reports: t('permissions:permissions.reports'),
-    settings: t('permissions:permissions.settings'),
-    auditLogs: t('permissions:permissions.auditLogs'),
-    permissions: t('permissions:permissions.permissions'),
-    contactMessages: t('permissions:permissions.contactMessages'),
-    modulePermissions: t('permissions:permissions.modulePermissions'),
-    affiliates: t('permissions:permissions.affiliates'),
-  }
-
-  const permissionGroups = [
-    {
-      title: t('permissions:groups.general'),
-      permissions: ['dashboard', 'users', 'settings'] as (keyof PermissionSet)[],
-    },
-    {
-      title: t('permissions:groups.payments'),
-      permissions: ['subscriptions', 'payments', 'transactions', 'affiliates'] as (keyof PermissionSet)[],
-    },
-    {
-      title: t('permissions:groups.education'),
-      permissions: ['content', 'courses', 'meetings', 'events'] as (keyof PermissionSet)[],
-    },
-    {
-      title: t('permissions:groups.communication'),
-      permissions: ['announcements', 'analytics', 'reports', 'contactMessages'] as (keyof PermissionSet)[],
-    },
-    {
-      title: t('permissions:groups.administration'),
-      permissions: ['auditLogs', 'permissions', 'modulePermissions'] as (keyof PermissionSet)[],
-    },
-  ]
-
   const fetchAdmins = async () => {
     try {
       setLoading(true)
       const data = await permissionService.getAllAdminPermissions()
       setAdmins(data)
     } catch (error) {
-      showError(t('permissions:messages.error'))
+      showError('Error al cargar los permisos')
       console.error('Error fetching permissions:', error)
     } finally {
       setLoading(false)
@@ -142,7 +139,7 @@ export default function PermissionsPage() {
       console.log('All keys present:', Object.keys(editedPermissions))
       
       await permissionService.updateUserPermissions(selectedUser._id, editedPermissions)
-      showSuccess(t('permissions:messages.updated'))
+      showSuccess('Permisos actualizados exitosamente')
       
       // Refresh the data
       await fetchAdmins()
@@ -154,7 +151,7 @@ export default function PermissionsPage() {
         handleUserSelect(updatedUser)
       }
     } catch (error: any) {
-      showError(error.message || t('permissions:messages.error'))
+      showError(error.message || 'Error al actualizar permisos')
       console.error('Error saving permissions:', error)
     } finally {
       setIsSaving(false)
@@ -167,12 +164,12 @@ export default function PermissionsPage() {
     try {
       setIsSaving(true)
       await permissionService.resetUserPermissions(selectedUser._id)
-      showSuccess(t('permissions:messages.reset'))
+      showSuccess('Permisos restablecidos exitosamente')
       setResetDialogOpen(false)
       fetchAdmins()
       handleUserSelect(selectedUser)
     } catch (error: any) {
-      showError(error.message || t('permissions:messages.error'))
+      showError(error.message || 'Error al restablecer permisos')
     } finally {
       setIsSaving(false)
     }
@@ -190,8 +187,8 @@ export default function PermissionsPage() {
     <AdminLayout>
       <Box>
         <PageHeader
-          title={t('permissions:title')}
-          subtitle={t('permissions:subtitle')}
+          title="Gestión de Permisos"
+          subtitle="Administra los permisos de acceso para usuarios administradores"
         />
 
         {loading ? (
@@ -203,7 +200,7 @@ export default function PermissionsPage() {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    {t('permissions:users.title')}
+                    Usuarios Administradores
                   </Typography>
                   
                   <Stack spacing={2} sx={{ mt: 2 }}>
@@ -238,14 +235,14 @@ export default function PermissionsPage() {
                           <Chip
                             size="small"
                             icon={admin.role === 'super_admin' ? <SupervisorAccount /> : <Person />}
-                            label={admin.role === 'super_admin' ? t('permissions:users.super_admin') : t('permissions:users.admin')}
+                            label={admin.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                             color={admin.role === 'super_admin' ? 'primary' : 'default'}
                           />
                         </Stack>
                         {admin.role === 'super_admin' && (
                           <Alert severity="info" sx={{ mt: 1, py: 0.5 }}>
                             <Typography variant="caption">
-                              {t('permissions:users.super_admin_note')}
+                              Los Super Admin tienen acceso completo
                             </Typography>
                           </Alert>
                         )}
@@ -264,10 +261,10 @@ export default function PermissionsPage() {
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                       <Box>
                         <Typography variant="h6">
-                          {t('permissions:editor.title', { name: `${selectedUser.firstName} ${selectedUser.lastName}` })}
+                          Permisos de {selectedUser.firstName} {selectedUser.lastName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {t('permissions:editor.subtitle')}
+                          Marca o desmarca los permisos que deseas asignar
                         </Typography>
                       </Box>
                       <Stack direction="row" spacing={2}>
@@ -277,7 +274,7 @@ export default function PermissionsPage() {
                           onClick={() => setResetDialogOpen(true)}
                           disabled={isSaving}
                         >
-                          {t('permissions:editor.reset')}
+                          Restablecer
                         </Button>
                         <Button
                           variant="contained"
@@ -285,7 +282,7 @@ export default function PermissionsPage() {
                           onClick={handleSave}
                           disabled={!hasChanges() || isSaving}
                         >
-                          {t('permissions:editor.save')}
+                          Guardar Cambios
                         </Button>
                       </Stack>
                     </Box>
@@ -294,8 +291,8 @@ export default function PermissionsPage() {
                       <Table>
                         <TableHead>
                           <TableRow>
-                            <TableCell>{t('permissions:editor.module')}</TableCell>
-                            <TableCell align="center">{t('permissions:editor.access')}</TableCell>
+                            <TableCell>Módulo</TableCell>
+                            <TableCell align="center">Acceso</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -339,10 +336,10 @@ export default function PermissionsPage() {
                     >
                       <Shield sx={{ fontSize: 80, color: 'action.disabled', mb: 2 }} />
                       <Typography variant="h6" color="text.secondary">
-                        {t('permissions:messages.select_user')}
+                        Selecciona un usuario para gestionar sus permisos
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        {t('permissions:users.super_admin_note')}
+                        Los Super Admin tienen acceso completo y no pueden ser modificados
                       </Typography>
                     </Box>
                   </CardContent>
@@ -357,17 +354,15 @@ export default function PermissionsPage() {
           open={resetDialogOpen}
           onClose={() => setResetDialogOpen(false)}
         >
-          <DialogTitle>{t('permissions:dialog.reset.title')}</DialogTitle>
+          <DialogTitle>Restablecer Permisos</DialogTitle>
           <DialogContent>
             <Typography>
-              {t('permissions:dialog.reset.message', { 
-                name: `${selectedUser?.firstName} ${selectedUser?.lastName}` 
-              })}
+              ¿Estás seguro de que deseas restablecer los permisos de {selectedUser?.firstName} {selectedUser?.lastName} a los valores predeterminados?
             </Typography>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setResetDialogOpen(false)}>
-              {t('permissions:dialog.reset.cancel')}
+              Cancelar
             </Button>
             <Button 
               onClick={handleReset} 
@@ -375,7 +370,7 @@ export default function PermissionsPage() {
               variant="contained"
               disabled={isSaving}
             >
-              {t('permissions:dialog.reset.confirm')}
+              Restablecer
             </Button>
           </DialogActions>
         </Dialog>
@@ -383,3 +378,6 @@ export default function PermissionsPage() {
     </AdminLayout>
   )
 }
+
+// Add Grid import
+import { Grid } from '@mui/material'

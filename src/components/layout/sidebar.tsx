@@ -34,6 +34,7 @@ import {
   Security,
   Event,
   Email,
+  LocalOffer,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/store/auth-store'
 import { usePermissionStore } from '@/store/permission-store'
@@ -55,6 +56,7 @@ const navigation: NavigationItem[] = [
   { name: 'subscriptions', href: '/subscriptions', icon: CreditCard, permission: 'subscriptions' },
   { name: 'meetings', href: '/meetings', icon: VideoCall, permission: 'meetings', featureFlag: 'meetings' },
   { name: 'events', href: '/events', icon: Event, permission: 'events' },
+  { name: 'affiliates', href: '/affiliates', icon: LocalOffer, permission: 'affiliates' },
   { name: 'contact_messages', href: '/contact-messages', icon: Email, permission: 'messages' },
   { name: 'content', href: '/content', icon: ContentPaste, permission: 'content' },
   { name: 'announcements', href: '/announcements', icon: Campaign, permission: 'announcements' },

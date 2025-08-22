@@ -1,0 +1,59 @@
+{
+  "title": "Gestión de Permisos",
+  "subtitle": "Administra los permisos de acceso para usuarios administradores",
+  "users": {
+    "title": "Usuarios Administradores",
+    "super_admin": "Super Admin",
+    "admin": "Admin",
+    "super_admin_note": "Los Super Admin tienen acceso completo"
+  },
+  "editor": {
+    "title": "Permisos de {{name}}",
+    "subtitle": "Marca o desmarca los permisos que deseas asignar",
+    "reset": "Restablecer",
+    "save": "Guardar Cambios",
+    "module": "Módulo",
+    "access": "Acceso"
+  },
+  "groups": {
+    "general": "Gestión General",
+    "payments": "Suscripciones y Pagos",
+    "education": "Contenido y Educación",
+    "communication": "Comunicación y Análisis",
+    "administration": "Administración"
+  },
+  "permissions": {
+    "dashboard": "Panel de Control",
+    "users": "Usuarios",
+    "subscriptions": "Suscripciones",
+    "payments": "Pagos",
+    "meetings": "Reuniones",
+    "events": "Eventos",
+    "content": "Contenido",
+    "courses": "Cursos",
+    "announcements": "Anuncios",
+    "analytics": "Analíticas",
+    "transactions": "Transacciones",
+    "reports": "Reportes",
+    "settings": "Configuración",
+    "auditLogs": "Registros de Auditoría",
+    "permissions": "Permisos",
+    "contactMessages": "Mensajes de Contacto",
+    "modulePermissions": "Permisos de Módulos",
+    "affiliates": "Afiliados"
+  },
+  "dialog": {
+    "reset": {
+      "title": "Restablecer Permisos",
+      "message": "¿Estás seguro de que deseas restablecer los permisos de {{name}} a los valores predeterminados?",
+      "cancel": "Cancelar",
+      "confirm": "Restablecer"
+    }
+  },
+  "messages": {
+    "updated": "Permisos actualizados exitosamente",
+    "reset": "Permisos restablecidos exitosamente",
+    "error": "Error al actualizar permisos",
+    "select_user": "Selecciona un usuario para gestionar sus permisos"
+  }
+}

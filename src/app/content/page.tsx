@@ -1,10 +1,95 @@
 'use client';
 
-import { Box, Typography, Paper, Container } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Tabs, Tab, Grid } from '@mui/material';
 import { AdminLayout } from '@/components/layout/admin-layout';
-import { ContentPaste } from '@mui/icons-material';
+import { VideoUploadWorkflow } from '@/components/content/video-upload-workflow';
+import { VideoList } from '@/components/content/video-list';
+import { ContentStats } from '@/components/content/content-stats';
+import { io, Socket } from 'socket.io-client';
+import { useSnackbar } from 'notistack';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`content-tabpanel-${index}`}
+      aria-labelledby={`content-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 export default function ContentPage() {
+  const [tabValue, setTabValue] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const { enqueueSnackbar } = useSnackbar();
+
+  useEffect(() => {
+    // Connect to WebSocket for real-time updates
+    const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000', {
+      transports: ['websocket', 'polling'],
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Connected to WebSocket');
+    });
+
+    newSocket.on('video-upload-completed', (data) => {
+      enqueueSnackbar(`Video "${data.fileName}" uploaded successfully`, {
+        variant: 'success',
+      });
+      setRefreshTrigger(prev => prev + 1);
+    });
+
+    newSocket.on('video-processing-started', (data) => {
+      enqueueSnackbar(`Processing started for "${data.fileName}"`, {
+        variant: 'info',
+      });
+    });
+
+    newSocket.on('video-processing-completed', (data) => {
+      enqueueSnackbar(`Video "${data.fileName}" is ready!`, {
+        variant: 'success',
+      });
+      setRefreshTrigger(prev => prev + 1);
+    });
+
+    newSocket.on('video-processing-failed', (data) => {
+      enqueueSnackbar(`Processing failed for "${data.fileName}": ${data.error}`, {
+        variant: 'error',
+      });
+      setRefreshTrigger(prev => prev + 1);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [enqueueSnackbar]);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleUploadComplete = () => {
+    setRefreshTrigger(prev => prev + 1);
+    setTabValue(1); // Switch to video list tab
+  };
+
   return (
     <AdminLayout>
       <Box sx={{ p: 3 }}>
@@ -14,56 +99,57 @@ export default function ContentPage() {
             Content Management
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Manage your platform's content and resources
+            Upload and manage video content for your courses
           </Typography>
         </Box>
 
-        {/* Coming Soon Card */}
-        <Container maxWidth="md">
-          <Paper
-            sx={{
-              p: 8,
-              textAlign: 'center',
-              backgroundColor: (theme) => 
-                theme.palette.mode === 'dark' 
-                  ? 'rgba(255, 255, 255, 0.05)' 
-                  : 'rgba(0, 0, 0, 0.02)',
-              border: '2px dashed',
-              borderColor: 'divider',
-            }}
-          >
-            <ContentPaste 
-              sx={{ 
-                fontSize: 80, 
-                color: 'primary.main',
-                mb: 3,
-                opacity: 0.5
-              }} 
-            />
-            <Typography variant="h3" gutterBottom fontWeight={600}>
-              Coming Soon
-            </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-              Content Management System
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto' }}>
-              We're working on a powerful content management system that will allow you to create, 
-              edit, and organize all your educational content in one place.
-            </Typography>
-            <Box sx={{ mt: 4, p: 3, bgcolor: 'primary.main', borderRadius: 2, color: 'white' }}>
-              <Typography variant="h6" gutterBottom>
-                Features in Development:
-              </Typography>
-              <Typography variant="body2">
-                • Course content editor<br/>
-                • Video library management<br/>
-                • Document uploads and organization<br/>
-                • Content categorization and tagging<br/>
-                • SEO optimization tools
-              </Typography>
-            </Box>
-          </Paper>
-        </Container>
+        {/* Stats Overview */}
+        <Box mb={4}>
+          <ContentStats refreshTrigger={refreshTrigger} />
+        </Box>
+
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+          <Tabs value={tabValue} onChange={handleTabChange}>
+            <Tab label="Upload Video" />
+            <Tab label="Video Library" />
+          </Tabs>
+        </Box>
+
+        {/* Tab Panels */}
+        <TabPanel value={tabValue} index={0}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={8}>
+              <VideoUploadWorkflow onUploadComplete={handleUploadComplete} />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Upload Guidelines
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Maximum file size: 10GB
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Supported formats: MP4, MOV, AVI, MKV, WebM
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Videos will be automatically converted to HLS format for optimal streaming
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Processing time depends on file size and may take several minutes
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • You'll receive real-time notifications about the upload and processing status
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          <VideoList refreshTrigger={refreshTrigger} />
+        </TabPanel>
       </Box>
     </AdminLayout>
   );

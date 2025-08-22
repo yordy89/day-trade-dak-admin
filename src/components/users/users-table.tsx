@@ -133,7 +133,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
   const columns: GridColDef[] = useMemo(() => [
     {
       field: 'user',
-      headerName: t('columns.user', 'User'),
+      headerName: t('users:table.user'),
       flex: 1,
       minWidth: 300,
       renderCell: (params: GridRenderCellParams) => {
@@ -188,7 +188,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
     {
       field: 'role',
-      headerName: t('columns.role', 'Role'),
+      headerName: t('users:table.role'),
       width: 130,
       renderCell: (params: GridRenderCellParams) => {
         const roleConfig: Record<string, any> = {
@@ -212,7 +212,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
     {
       field: 'subscriptionStatus',
-      headerName: t('columns.status', 'Status'),
+      headerName: t('users:table.status'),
       width: 120,
       renderCell: (params: GridRenderCellParams) => {
         // First check the user's actual status field
@@ -240,7 +240,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
     {
       field: 'plans',
-      headerName: t('columns.activePlans', 'Active Plans'),
+      headerName: t('users:table.subscription'),
       width: 280,
       renderCell: (params: GridRenderCellParams) => {
         const subscriptions = params.row.subscriptions || []
@@ -288,7 +288,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
     {
       field: 'totalSubscriptions',
-      headerName: t('columns.totalPlans', 'Total Plans'),
+      headerName: t('users:table.totalPlans'),
       width: 120,
       align: 'center',
       headerAlign: 'center',
@@ -312,7 +312,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
     {
       field: 'hasStripeCustomer',
-      headerName: t('columns.payment', 'Payment'),
+      headerName: t('users:table.payment'),
       width: 100,
       align: 'center',
       headerAlign: 'center',
@@ -336,7 +336,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
     {
       field: 'allowLiveMeetingAccess',
-      headerName: t('columns.liveAccess', 'Live Access'),
+      headerName: t('users:table.liveAccess'),
       width: 120,
       align: 'center',
       headerAlign: 'center',
@@ -358,7 +358,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
     {
       field: 'allowLiveWeeklyAccess',
-      headerName: t('columns.liveWeekly', 'Live Weekly'),
+      headerName: t('users:table.liveWeekly'),
       width: 120,
       align: 'center',
       headerAlign: 'center',
@@ -380,7 +380,7 @@ export function UsersTable({ searchQuery, filters }: UsersTableProps) {
     },
     {
       field: 'actions',
-      headerName: t('columns.actions', 'Actions'),
+      headerName: t('users:table.actions'),
       width: 80,
       sortable: false,
       align: 'center',

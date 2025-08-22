@@ -1,0 +1,113 @@
+{
+  "title": "Affiliates Management",
+  "subtitle": "Manage affiliate partners and their commissions",
+  "tabs": {
+    "affiliates": "Affiliates",
+    "commissions": "Commissions"
+  },
+  "stats": {
+    "total": "Total Affiliates",
+    "active": "Active",
+    "owed": "Commission Owed",
+    "lifetime": "Lifetime Paid"
+  },
+  "table": {
+    "code": "Code",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "discount": "Discount",
+    "commission": "Commission",
+    "totalSales": "Total Sales",
+    "totalCommission": "Total Commission",
+    "status": "Status",
+    "actions": "Actions",
+    "type": "Type",
+    "amount": "Amount"
+  },
+  "buttons": {
+    "new": "New Affiliate",
+    "export": "Export",
+    "sync": "Sync with Stripe",
+    "viewDetails": "View Details",
+    "markPaid": "Mark as Paid",
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "activate": "Activate"
+  },
+  "dialog": {
+    "title": "New Affiliate",
+    "editTitle": "Edit Affiliate",
+    "fields": {
+      "code": "Affiliate Code",
+      "name": "Full Name",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "discountType": "Discount Type",
+      "discountPercentage": "Discount Percentage",
+      "discountAmount": "Fixed Discount Amount",
+      "commissionType": "Commission Type",
+      "commissionRate": "Commission Rate (%)",
+      "commissionAmount": "Fixed Commission Amount",
+      "isActive": "Active"
+    },
+    "types": {
+      "percentage": "Percentage",
+      "fixed": "Fixed Amount"
+    },
+    "placeholders": {
+      "code": "Enter unique code",
+      "name": "Enter full name",
+      "email": "affiliate@example.com",
+      "phone": "+1 234 567 8900",
+      "percentage": "e.g., 10",
+      "amount": "e.g., 50.00"
+    },
+    "validation": {
+      "required": "This field is required",
+      "invalidEmail": "Invalid email address",
+      "duplicateCode": "This code already exists",
+      "invalidPercentage": "Must be between 0 and 100",
+      "invalidAmount": "Must be a positive number"
+    }
+  },
+  "commission": {
+    "title": "Commission Details",
+    "affiliate": "Affiliate",
+    "transaction": "Transaction",
+    "customer": "Customer",
+    "amount": "Commission Amount",
+    "status": "Status",
+    "date": "Date",
+    "paymentDate": "Payment Date",
+    "originalAmount": "Original Amount",
+    "note": "Note"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "approved": "Approved",
+    "paid": "Paid",
+    "cancelled": "Cancelled"
+  },
+  "messages": {
+    "created": "Affiliate created successfully",
+    "updated": "Affiliate updated successfully",
+    "deleted": "Affiliate deleted successfully",
+    "synced": "Synced with Stripe successfully",
+    "commissionPaid": "Commission marked as paid",
+    "error": "An error occurred. Please try again."
+  },
+  "empty": {
+    "title": "No affiliates found",
+    "message": "Start by creating your first affiliate partner",
+    "commissions": "No commissions to display"
+  },
+  "filters": {
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "search": "Search affiliates..."
+  }
+}

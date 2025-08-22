@@ -1,0 +1,59 @@
+{
+  "title": "Permissions Management",
+  "subtitle": "Manage access permissions for admin users",
+  "users": {
+    "title": "Admin Users",
+    "super_admin": "Super Admin",
+    "admin": "Admin",
+    "super_admin_note": "Super Admins have full access"
+  },
+  "editor": {
+    "title": "Permissions for {{name}}",
+    "subtitle": "Check or uncheck the permissions you want to assign",
+    "reset": "Reset",
+    "save": "Save Changes",
+    "module": "Module",
+    "access": "Access"
+  },
+  "groups": {
+    "general": "General Management",
+    "payments": "Subscriptions and Payments",
+    "education": "Content and Education",
+    "communication": "Communication and Analysis",
+    "administration": "Administration"
+  },
+  "permissions": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "subscriptions": "Subscriptions",
+    "payments": "Payments",
+    "meetings": "Meetings",
+    "events": "Events",
+    "content": "Content",
+    "courses": "Courses",
+    "announcements": "Announcements",
+    "analytics": "Analytics",
+    "transactions": "Transactions",
+    "reports": "Reports",
+    "settings": "Settings",
+    "auditLogs": "Audit Logs",
+    "permissions": "Permissions",
+    "contactMessages": "Contact Messages",
+    "modulePermissions": "Module Permissions",
+    "affiliates": "Affiliates"
+  },
+  "dialog": {
+    "reset": {
+      "title": "Reset Permissions",
+      "message": "Are you sure you want to reset {{name}}'s permissions to default values?",
+      "cancel": "Cancel",
+      "confirm": "Reset"
+    }
+  },
+  "messages": {
+    "updated": "Permissions updated successfully",
+    "reset": "Permissions reset successfully",
+    "error": "Error updating permissions",
+    "select_user": "Select a user to manage their permissions"
+  }
+}

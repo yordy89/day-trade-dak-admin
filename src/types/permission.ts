@@ -16,6 +16,7 @@ export interface PermissionSet {
   permissions?: boolean // Only visible for super_admin
   contactMessages: boolean
   modulePermissions: boolean // New: Permisos de Módulos
+  affiliates: boolean // New: Afiliados
 }
 
 export interface AdminUserWithPermissions {
@@ -46,6 +47,7 @@ export interface UpdatePermissionsRequest {
   permissions?: boolean
   contactMessages?: boolean
   modulePermissions?: boolean
+  affiliates?: boolean
 }
 
 export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
@@ -66,6 +68,7 @@ export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
   permissions: false,
   contactMessages: true,
   modulePermissions: false, // Admins don't get module permissions by default
+  affiliates: false, // Admins don't get affiliates permission by default
 }
 
 export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
@@ -86,4 +89,5 @@ export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
   permissions: true,
   contactMessages: true,
   modulePermissions: true, // Super admins have module permissions
+  affiliates: true, // Super admins have affiliates permission
 }

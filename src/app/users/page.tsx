@@ -138,16 +138,16 @@ export default function UsersPage() {
               label={t('filters.subscription', 'Subscription')}
             >
               <MenuItem value="all">{t('filters.all', 'All')}</MenuItem>
-              <MenuItem value="LiveWeeklyManual">Live Weekly Manual</MenuItem>
-              <MenuItem value="LiveWeeklyRecurring">Live Weekly Recurring</MenuItem>
-              <MenuItem value="MasterClases">Master Clases</MenuItem>
-              <MenuItem value="LiveRecorded">Live Recorded</MenuItem>
-              <MenuItem value="Psicotrading">Psicotrading</MenuItem>
-              <MenuItem value="Classes">Classes</MenuItem>
-              <MenuItem value="PeaceWithMoney">Peace With Money</MenuItem>
-              <MenuItem value="MasterCourse">Master Course</MenuItem>
-              <MenuItem value="CommunityEvent">Community Event</MenuItem>
-              <MenuItem value="VipEvent">VIP Event</MenuItem>
+              <MenuItem value="LiveWeeklyManual">{t('subscriptions.LiveWeeklyManual')}</MenuItem>
+              <MenuItem value="LiveWeeklyRecurring">{t('subscriptions.LiveWeeklyRecurring')}</MenuItem>
+              <MenuItem value="MasterClases">{t('subscriptions.MasterClases')}</MenuItem>
+              <MenuItem value="LiveRecorded">{t('subscriptions.LiveRecorded')}</MenuItem>
+              <MenuItem value="Psicotrading">{t('subscriptions.Psicotrading')}</MenuItem>
+              <MenuItem value="Classes">{t('subscriptions.Classes')}</MenuItem>
+              <MenuItem value="PeaceWithMoney">{t('subscriptions.PeaceWithMoney')}</MenuItem>
+              <MenuItem value="MasterCourse">{t('subscriptions.MasterCourse')}</MenuItem>
+              <MenuItem value="CommunityEvent">{t('subscriptions.CommunityEvent')}</MenuItem>
+              <MenuItem value="VipEvent">{t('subscriptions.VipEvent')}</MenuItem>
             </Select>
           </FormControl>
 
