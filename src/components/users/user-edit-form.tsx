@@ -19,9 +19,14 @@ import {
   Typography,
   Card,
   CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
-import { Save, Cancel } from '@mui/icons-material';
+import { Save, Cancel, Lock } from '@mui/icons-material';
 import { useSnackbar } from '@/hooks/use-snackbar';
 import { userService } from '@/services/user.service';
 import { UserModulePermissionsSection } from './user-module-permissions-section';
@@ -39,6 +44,11 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
   const currentUser = useAuthStore((state) => state.user);
   const isSuperAdmin = currentUser?.role === 'super_admin';
   const [loading, setLoading] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -132,6 +142,49 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
     }
   };
 
+  const handleResetPassword = async () => {
+    // Validate passwords
+    if (!newPassword) {
+      setPasswordError('La contraseña es requerida');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
+    try {
+      setResettingPassword(true);
+      setPasswordError('');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/admin/users/${userId}/reset-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al resetear la contraseña');
+      }
+
+      showSuccess('Contraseña actualizada exitosamente');
+      setResetPasswordOpen(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      showError(error.message || 'Error al resetear la contraseña');
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit}>
       <Stack spacing={3}>
@@ -189,6 +242,19 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
                     helperText={errors.password}
                     required
                   />
+                </Grid>
+              )}
+              {userId && (
+                <Grid item xs={12} md={6}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Lock />}
+                    onClick={() => setResetPasswordOpen(true)}
+                    fullWidth
+                    sx={{ height: '56px' }}
+                  >
+                    Resetear Contraseña
+                  </Button>
                 </Grid>
               )}
               <Grid item xs={12} md={6}>
@@ -344,6 +410,60 @@ export function UserEditForm({ userId, initialData, onCancel }: UserEditFormProp
           </LoadingButton>
         </Box>
       </Stack>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={resetPasswordOpen} onClose={() => setResetPasswordOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Resetear Contraseña</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 3 }}>
+            Ingresa una nueva contraseña para el usuario {formData.email}
+          </DialogContentText>
+          <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label="Nueva Contraseña"
+              type="password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setPasswordError('');
+              }}
+              error={!!passwordError}
+              autoFocus
+            />
+            <TextField
+              fullWidth
+              label="Confirmar Contraseña"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setPasswordError('');
+              }}
+              error={!!passwordError}
+              helperText={passwordError}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setResetPasswordOpen(false);
+            setNewPassword('');
+            setConfirmPassword('');
+            setPasswordError('');
+          }} disabled={resettingPassword}>
+            Cancelar
+          </Button>
+          <LoadingButton
+            onClick={handleResetPassword}
+            loading={resettingPassword}
+            variant="contained"
+            startIcon={<Lock />}
+          >
+            Resetear Contraseña
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
     </form>
   );
 }

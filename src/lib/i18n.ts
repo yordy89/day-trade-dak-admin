@@ -15,6 +15,8 @@ import enAffiliates from '@/locales/en/affiliates.json'
 import esAffiliates from '@/locales/es/affiliates.json'
 import enUsers from '@/locales/en/users.json'
 import esUsers from '@/locales/es/users.json'
+import enFinancing from '@/locales/en/financing.json'
+import esFinancing from '@/locales/es/financing.json'
 
 const resources = {
   en: {
@@ -24,6 +26,7 @@ const resources = {
     permissions: enPermissions,
     affiliates: enAffiliates,
     users: enUsers,
+    financing: enFinancing,
   },
   es: {
     common: esCommon,
@@ -32,6 +35,7 @@ const resources = {
     permissions: esPermissions,
     affiliates: esAffiliates,
     users: esUsers,
+    financing: esFinancing,
   },
 }
 
@@ -42,7 +46,7 @@ i18n
     resources,
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'dashboard', 'auth', 'permissions', 'affiliates', 'users'],
+    ns: ['common', 'dashboard', 'auth', 'permissions', 'affiliates', 'users', 'financing'],
     interpolation: {
       escapeValue: false,
     },
