@@ -15,6 +15,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  CircularProgress,
 } from '@mui/material'
 import { 
   Search, 
@@ -26,6 +27,8 @@ import {
 import { AdminLayout } from '@/components/layout/admin-layout'
 import { UsersTable } from '@/components/users/users-table'
 import { useRouter } from 'next/navigation'
+import { ExportUtils } from '@/utils/export-utils'
+import { toast } from 'react-hot-toast'
 
 export default function UsersPage() {
   const { t } = useTranslation('users')
@@ -37,15 +40,43 @@ export default function UsersPage() {
     role: 'all',
   })
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null)
+  const [isExporting, setIsExporting] = useState(false)
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log('Export users')
-    setAnchorEl(null)
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    try {
+      setIsExporting(true)
+      
+      const params = {
+        ...(searchQuery && { search: searchQuery }),
+        ...(filters.status !== 'all' && { status: filters.status }),
+        ...(filters.subscription !== 'all' && { subscription: filters.subscription }),
+        ...(filters.role !== 'all' && { role: filters.role }),
+      }
+
+      // Get the admin token
+      const adminToken = localStorage.getItem('adminToken')
+      
+      if (!adminToken) {
+        toast.error('Please log in again to export users')
+        return
+      }
+
+      // Use client-side export
+      await ExportUtils.exportFromAPI(format, params, adminToken)
+      
+      toast.success(`Users exported successfully as ${format.toUpperCase()}`)
+      setExportAnchorEl(null)
+    } catch (error: any) {
+      console.error('Export error:', error)
+      toast.error(`Export failed: ${error.message || 'Unknown error'}`)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   return (
@@ -74,17 +105,26 @@ export default function UsersPage() {
             >
               {t('actions.addUser', 'Add User')}
             </Button>
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-              <MoreVert />
-            </IconButton>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={() => setAnchorEl(null)}
+            <Button
+              variant="outlined"
+              startIcon={isExporting ? <CircularProgress size={20} /> : <Download />}
+              onClick={(e) => setExportAnchorEl(e.currentTarget)}
+              disabled={isExporting}
             >
-              <MenuItem onClick={handleExport}>
+              {isExporting ? t('actions.exporting', 'Exporting...') : t('actions.export', 'Export Users')}
+            </Button>
+            <Menu
+              anchorEl={exportAnchorEl}
+              open={Boolean(exportAnchorEl)}
+              onClose={() => !isExporting && setExportAnchorEl(null)}
+            >
+              <MenuItem onClick={() => handleExport('csv')} disabled={isExporting}>
                 <Download sx={{ mr: 1, fontSize: 20 }} />
-                {t('actions.export', 'Export Users')}
+                {t('actions.exportCSV', 'Export as CSV')}
+              </MenuItem>
+              <MenuItem onClick={() => handleExport('pdf')} disabled={isExporting}>
+                <Download sx={{ mr: 1, fontSize: 20 }} />
+                {t('actions.exportPDF', 'Export as PDF')}
               </MenuItem>
             </Menu>
           </Box>
@@ -138,6 +178,7 @@ export default function UsersPage() {
               label={t('filters.subscription', 'Subscription')}
             >
               <MenuItem value="all">{t('filters.all', 'All')}</MenuItem>
+              <MenuItem value="none">{t('filters.noSubscription', 'No Subscription')}</MenuItem>
               <MenuItem value="LiveWeeklyManual">{t('subscriptions.LiveWeeklyManual')}</MenuItem>
               <MenuItem value="LiveWeeklyRecurring">{t('subscriptions.LiveWeeklyRecurring')}</MenuItem>
               <MenuItem value="MasterClases">{t('subscriptions.MasterClases')}</MenuItem>
