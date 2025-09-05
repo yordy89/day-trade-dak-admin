@@ -91,9 +91,15 @@ export function EventModulePermissions() {
     try {
       setLoading(true);
       const response = await eventService.getEvents();
-      setEvents(response.events || []);
+      // Filter out any invalid events and ensure data integrity
+      const validEvents = (response.events || []).filter(event => 
+        event && typeof event === 'object' && event._id && event.title
+      );
+      setEvents(validEvents);
     } catch (error) {
+      console.error('Error fetching events:', error);
       showError('Error al cargar eventos');
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -121,8 +127,10 @@ export function EventModulePermissions() {
     try {
       setSubmitting(true);
       
-      // Get unique user IDs from registrations
-      const userIds = [...new Set(registrations.map(reg => reg.user._id))];
+      // Get unique user IDs from registrations, filtering out any invalid ones
+      const userIds = [...new Set(registrations
+        .filter(reg => reg.user && reg.user._id)
+        .map(reg => reg.user._id))];
       
       // Grant permissions for each selected module
       const results = await Promise.all(
@@ -168,28 +176,39 @@ export function EventModulePermissions() {
         {/* Event Selector */}
         <Autocomplete
           options={events}
-          getOptionLabel={(option) => `${option.title} - ${formatDate(option.date)}`}
+          getOptionLabel={(option) => {
+            if (!option || typeof option === 'string') return option || ''
+            return `${option.title || 'Sin título'} - ${formatDate(option.date)}`
+          }}
           value={selectedEvent}
           onChange={(_, newValue) => setSelectedEvent(newValue)}
           loading={loading}
-          renderOption={(props, option) => (
-            <Box component="li" {...props}>
-              <Stack sx={{ width: '100%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body1">{option.title}</Typography>
-                  <Chip 
-                    size="small" 
-                    label={option.type} 
-                    color={option.status === 'active' ? 'success' : 'default'}
-                  />
-                </Box>
-                <Typography variant="caption" color="text.secondary">
-                  {formatDate(option.date)} • {option.location || 'Online'}
-                  {option.registrations !== undefined && ` • ${option.registrations} registros`}
-                </Typography>
-              </Stack>
-            </Box>
-          )}
+          renderOption={(props, option) => {
+            const { key, ...otherProps } = props as any;
+            if (!option || typeof option === 'string') {
+              return <Box key={key} component="li" {...otherProps}>{option || 'Invalid option'}</Box>
+            }
+            return (
+              <Box key={key} component="li" {...otherProps}>
+                <Stack sx={{ width: '100%' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body1">{option.title || 'Sin título'}</Typography>
+                    {option.type && (
+                      <Chip 
+                        size="small" 
+                        label={option.type} 
+                        color={option.status === 'active' ? 'success' : 'default'}
+                      />
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatDate(option.date)} • {option.location || 'Online'}
+                    {option.registrations !== undefined && ` • ${option.registrations} registros`}
+                  </Typography>
+                </Stack>
+              </Box>
+            )
+          }}
           renderInput={(params) => (
             <TextField
               {...params}
@@ -311,16 +330,16 @@ export function EventModulePermissions() {
                             <TableCell>
                               <Stack direction="row" spacing={1} alignItems="center">
                                 <Avatar sx={{ width: 32, height: 32 }}>
-                                  {registration.user.firstName?.[0] || registration.user.email[0]}
+                                  {registration.user?.firstName?.[0] || registration.user?.email?.[0] || '?'}
                                 </Avatar>
                                 <Typography variant="body2">
-                                  {registration.user.firstName} {registration.user.lastName}
+                                  {registration.user?.firstName || ''} {registration.user?.lastName || ''}
                                 </Typography>
                               </Stack>
                             </TableCell>
                             <TableCell>
                               <Typography variant="body2" color="text.secondary">
-                                {registration.user.email}
+                                {registration.user?.email || 'Sin email'}
                               </Typography>
                             </TableCell>
                             <TableCell>

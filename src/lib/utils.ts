@@ -27,12 +27,22 @@ export function formatPercentage(value: number): string {
   }).format(isPercentage ? value : value / 100)
 }
 
-export function formatDate(date: Date | string): string {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(date))
+export function formatDate(date: Date | string | null | undefined): string {
+  if (!date) return '-'
+  
+  try {
+    const dateObj = new Date(date)
+    if (!isValid(dateObj)) {
+      return '-'
+    }
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(dateObj)
+  } catch (error) {
+    return '-'
+  }
 }
 
 export function formatDateTime(date: Date | string, formatStr?: string): string {
