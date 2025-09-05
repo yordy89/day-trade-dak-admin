@@ -17,6 +17,7 @@ import { FooterSettings } from '@/components/settings/footer-settings'
 import { BrandingSettings } from '@/components/settings/branding-settings'
 import { NotificationEmails } from '@/components/settings/notification-emails'
 import { TradingSettings } from '@/components/settings/trading-settings'
+import { SystemMaintenance } from '@/components/settings/system-maintenance'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -66,8 +67,13 @@ export default function SettingsPage() {
         SettingCategory.BRANDING,
         SettingCategory.NOTIFICATIONS,
         SettingCategory.TRADING,
+        'MAINTENANCE', // Special case for maintenance tab
       ]
-      return settingsService.getSettingsByCategory(categories[activeTab])
+      // Don't fetch settings for maintenance tab
+      if (categories[activeTab] === 'MAINTENANCE') {
+        return []
+      }
+      return settingsService.getSettingsByCategory(categories[activeTab] as SettingCategory)
     },
   })
 
@@ -204,6 +210,7 @@ export default function SettingsPage() {
       onSave={handleSaveAll}
       loading={bulkUpdateMutation.isPending}
     />,
+    <SystemMaintenance key="maintenance" />,
   ]
 
   return (
@@ -249,6 +256,7 @@ export default function SettingsPage() {
             <Tab label="Branding" {...a11yProps(4)} />
             <Tab label="Notifications" {...a11yProps(5)} />
             <Tab label="Trading" {...a11yProps(6)} />
+            <Tab label="Maintenance" {...a11yProps(7)} />
           </Tabs>
         </Box>
 

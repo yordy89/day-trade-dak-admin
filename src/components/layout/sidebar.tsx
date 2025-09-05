@@ -36,6 +36,7 @@ import {
   Email,
   LocalOffer,
   AccountBalance,
+  MailOutline,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/store/auth-store'
 import { usePermissionStore } from '@/store/permission-store'
@@ -57,6 +58,7 @@ const navigation: NavigationItem[] = [
   { name: 'subscriptions', href: '/subscriptions', icon: CreditCard, permission: 'subscriptions' },
   { name: 'meetings', href: '/meetings', icon: VideoCall, permission: 'meetings', featureFlag: 'meetings' },
   { name: 'events', href: '/events', icon: Event, permission: 'events' },
+  { name: 'email_marketing', href: '/email-marketing', icon: MailOutline, permission: 'emailMarketing' },
   { name: 'financing', href: '/financing', icon: AccountBalance, permission: 'financing' },
   { name: 'affiliates', href: '/affiliates', icon: LocalOffer, permission: 'affiliates' },
   { name: 'contact_messages', href: '/contact-messages', icon: Email, permission: 'messages' },
