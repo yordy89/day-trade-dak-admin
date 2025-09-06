@@ -81,12 +81,32 @@ export default function EventsPage() {
         type: typeFilter,
         status: statusFilter,
       })
-      // Map service events to local Event type
-      const mappedEvents: Event[] = (response.events || []).map((event: any) => ({
-        ...event,
-        name: event.title || '',  // Map title to name
-        isActive: event.status === 'active',  // Map status to isActive
-      }))
+      
+      // Map service events to local Event type and fetch real registration counts
+      const mappedEvents: Event[] = await Promise.all(
+        (response.events || []).map(async (event: any) => {
+          // Fetch actual registration count for each event
+          let actualRegistrations = event.registrations || event.currentRegistrations || 0;
+          
+          try {
+            // Only fetch if the count seems incorrect or is 0 for webinar
+            if (event.type === 'webinar' || actualRegistrations === 10 || actualRegistrations === 0) {
+              const registrationsResponse = await eventService.getEventRegistrations(event._id, { limit: 1 });
+              actualRegistrations = registrationsResponse.total || 0;
+            }
+          } catch (error) {
+            console.error(`Error fetching registrations for event ${event._id}:`, error);
+          }
+          
+          return {
+            ...event,
+            name: event.title || '',  // Map title to name
+            isActive: event.status === 'active',  // Map status to isActive
+            registrations: actualRegistrations,  // Use actual registration count
+          };
+        })
+      );
+      
       setEvents(mappedEvents)
       setTotalEvents(response.total || 0)
     } catch (error) {
@@ -230,11 +250,21 @@ export default function EventsPage() {
           master_course: 'Master Course',
           community_event: 'Evento Comunitario',
           general: 'General',
+          workshop: 'Workshop',
+          webinar: 'Webinar',
+          seminar: 'Seminario',
+          bootcamp: 'Bootcamp',
+          conference: 'Conferencia',
         }
         const typeColors = {
           master_course: 'primary',
           community_event: 'success',
           general: 'default',
+          workshop: 'info',
+          webinar: 'warning',
+          seminar: 'secondary',
+          bootcamp: 'error',
+          conference: 'primary',
         }
         const eventType = params.value || 'general'
         return (
@@ -512,6 +542,11 @@ export default function EventsPage() {
                   <MenuItem value="master_course">Master Course</MenuItem>
                   <MenuItem value="community_event">Evento Comunitario</MenuItem>
                   <MenuItem value="general">General</MenuItem>
+                  <MenuItem value="workshop">Workshop</MenuItem>
+                  <MenuItem value="webinar">Webinar</MenuItem>
+                  <MenuItem value="seminar">Seminario</MenuItem>
+                  <MenuItem value="bootcamp">Bootcamp</MenuItem>
+                  <MenuItem value="conference">Conferencia</MenuItem>
                 </Select>
               </FormControl>
             </Grid>

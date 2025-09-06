@@ -80,6 +80,7 @@ export default function EditEventPage() {
     capacity: 0,
     status: 'active' as 'active' | 'draft' | 'completed',
     featuredInCRM: false,
+    showInLandingPage: false,
     metadata: {
       hotel: '',
       hotelAddress: '',
@@ -135,6 +136,7 @@ export default function EditEventPage() {
         capacity: mappedEvent.capacity || 0,
         status: mappedEvent.status || 'active',
         featuredInCRM: mappedEvent.featuredInCRM || false,
+        showInLandingPage: mappedEvent.showInLandingPage || false,
         metadata: {
           hotel: mappedEvent.metadata?.hotel || '',
           hotelAddress: mappedEvent.metadata?.hotelAddress || '',
@@ -174,6 +176,7 @@ export default function EditEventPage() {
         requiresActiveSubscription: formData.requiresActiveSubscription,
         status: formData.status,
         featuredInCRM: formData.featuredInCRM,
+        showInLandingPage: formData.showInLandingPage,
       }
 
       // Add optional string fields only if they have content
@@ -356,6 +359,11 @@ export default function EditEventPage() {
                             <MenuItem value="general">General</MenuItem>
                             <MenuItem value="master_course">Master Course</MenuItem>
                             <MenuItem value="community_event">Evento Comunitario</MenuItem>
+                            <MenuItem value="workshop">Workshop</MenuItem>
+                            <MenuItem value="webinar">Webinar</MenuItem>
+                            <MenuItem value="seminar">Seminario</MenuItem>
+                            <MenuItem value="bootcamp">Bootcamp</MenuItem>
+                            <MenuItem value="conference">Conferencia</MenuItem>
                           </Select>
                         </FormControl>
                       </Grid>
@@ -871,6 +879,22 @@ export default function EditEventPage() {
                         <Alert severity="info" sx={{ mt: 1 }}>
                           Este evento será el único de tipo "{formData.type}" que se mostrará en el CRM. 
                           Otros eventos del mismo tipo serán automáticamente desmarcados.
+                        </Alert>
+                      )}
+                      
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.showInLandingPage}
+                            onChange={(e) => setFormData({ ...formData, showInLandingPage: e.target.checked })}
+                            color="success"
+                          />
+                        }
+                        label="Mostrar en Landing Page"
+                      />
+                      {formData.showInLandingPage && (
+                        <Alert severity="success" sx={{ mt: 1 }}>
+                          Este evento aparecerá en la página de eventos públicos para registro gratuito.
                         </Alert>
                       )}
                     </Stack>

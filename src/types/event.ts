@@ -11,7 +11,7 @@ export interface Event {
   vipPrice?: number
   price?: number
   isActive: boolean
-  type: 'master_course' | 'community_event' | 'general'
+  type: 'master_course' | 'community_event' | 'general' | 'workshop' | 'webinar' | 'seminar' | 'bootcamp' | 'conference'
   requiresActiveSubscription?: boolean
   capacity?: number
   registrations?: string[] | number
@@ -37,6 +37,7 @@ export interface Event {
   }
   status?: 'active' | 'draft' | 'completed'
   featuredInCRM?: boolean
+  showInLandingPage?: boolean
   createdAt: string
   updatedAt: string
 }

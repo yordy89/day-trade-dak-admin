@@ -582,6 +582,11 @@ export default function EventDetailPage() {
                       label={
                         event.type === 'master_course' ? 'Master Course' :
                         event.type === 'community_event' ? 'Evento Comunitario' :
+                        event.type === 'workshop' ? 'Workshop' :
+                        event.type === 'webinar' ? 'Webinar' :
+                        event.type === 'seminar' ? 'Seminario' :
+                        event.type === 'bootcamp' ? 'Bootcamp' :
+                        event.type === 'conference' ? 'Conferencia' :
                         'General'
                       }
                       color="primary"
