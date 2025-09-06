@@ -83,30 +83,39 @@ export default function EventsPage() {
       })
       
       // Map service events to local Event type and fetch real registration counts
-      const mappedEvents: Event[] = await Promise.all(
-        (response.events || []).map(async (event: any) => {
-          // Always fetch actual registration count from the registrations endpoint
-          let actualRegistrations = 0;
-          
-          try {
-            const registrationsResponse = await eventService.getEventRegistrations(event._id, { limit: 1 });
-            actualRegistrations = registrationsResponse.total || 0;
-            console.log(`Event ${event.title}: Backend says ${event.registrations || event.currentRegistrations}, Actual: ${actualRegistrations}`);
-          } catch (error) {
-            console.error(`Error fetching registrations for event ${event._id}:`, error);
-            // Fallback to backend value if fetch fails
-            actualRegistrations = event.registrations || event.currentRegistrations || 0;
-          }
-          
-          return {
-            ...event,
-            name: event.title || '',  // Map title to name
-            isActive: event.status === 'active',  // Map status to isActive
-            registrations: actualRegistrations,  // Always use actual registration count
-            currentRegistrations: actualRegistrations,  // Also set currentRegistrations
-          };
-        })
-      );
+      const eventsWithCounts = [];
+      
+      for (const event of (response.events || [])) {
+        let actualRegistrations = 0;
+        
+        // Log the event details for debugging
+        console.log(`Processing event: ${event.title || event.name} (ID: ${event._id})`);
+        console.log(`Backend registration value: ${event.registrations || event.currentRegistrations || 'undefined'}`);
+        
+        try {
+          // Make the API call to get actual registrations
+          const registrationsResponse = await eventService.getEventRegistrations(event._id, { limit: 1 });
+          actualRegistrations = registrationsResponse.total || 0;
+          console.log(`✅ Successfully fetched actual count for ${event.title}: ${actualRegistrations}`);
+        } catch (error) {
+          console.error(`❌ Failed to fetch registrations for ${event.title} (${event._id}):`, error);
+          // Don't use backend value - it's wrong. Default to 0
+          actualRegistrations = 0;
+        }
+        
+        // Create the mapped event with the correct registration count
+        const mappedEvent = {
+          ...event,
+          name: event.title || event.name || '',
+          isActive: event.status === 'active',
+          registrations: actualRegistrations,
+          currentRegistrations: actualRegistrations,
+        };
+        
+        eventsWithCounts.push(mappedEvent);
+      }
+      
+      const mappedEvents: Event[] = eventsWithCounts;
       
       setEvents(mappedEvents)
       setTotalEvents(response.total || 0)
