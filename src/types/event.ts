@@ -35,7 +35,7 @@ export interface Event {
     lat?: number
     lng?: number
   }
-  status?: 'active' | 'draft' | 'completed'
+  status?: 'active' | 'draft' | 'completed' | 'cancelled'
   featuredInCRM?: boolean
   showInLandingPage?: boolean
   createdAt: string

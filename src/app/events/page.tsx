@@ -89,8 +89,8 @@ export default function EventsPage() {
         let actualRegistrations = 0;
         
         // Log the event details for debugging
-        console.log(`Processing event: ${event.title || event.name} (ID: ${event._id})`);
-        console.log(`Backend registration value: ${event.registrations || event.currentRegistrations || 'undefined'}`);
+        console.log(`Processing event: ${event.title} (ID: ${event._id})`);
+        console.log(`Backend registration value: ${event.registrations || 'undefined'}`);
         
         try {
           // Make the API call to get actual registrations
@@ -106,7 +106,7 @@ export default function EventsPage() {
         // Create the mapped event with the correct registration count
         const mappedEvent = {
           ...event,
-          name: event.title || event.name || '',
+          name: event.title || '',
           isActive: event.status === 'active',
           registrations: actualRegistrations,
           currentRegistrations: actualRegistrations,
@@ -116,6 +116,9 @@ export default function EventsPage() {
       }
       
       const mappedEvents: Event[] = eventsWithCounts;
+      
+      console.log('Final mapped events to be set in state:', mappedEvents);
+      console.log('Webinar registration count:', mappedEvents.find(e => e.type === 'webinar')?.registrations);
       
       setEvents(mappedEvents)
       setTotalEvents(response.total || 0)
@@ -128,7 +131,12 @@ export default function EventsPage() {
   }
 
   useEffect(() => {
-    fetchEvents()
+    // Debounce the fetch to avoid multiple calls
+    const timer = setTimeout(() => {
+      fetchEvents()
+    }, 100)
+    
+    return () => clearTimeout(timer)
   }, [paginationModel, searchTerm, typeFilter, statusFilter])
 
   const handleCreateEvent = () => {
