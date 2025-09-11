@@ -319,15 +319,20 @@ export default function EventsPage() {
       width: 110,
       align: 'left',
       headerAlign: 'left',
-      renderCell: (params) => (
-        <Box display="flex" alignItems="center" gap={0.5} height="100%">
-          <People sx={{ fontSize: 16, color: 'text.secondary' }} />
-          <Typography variant="body2" fontWeight={500}>
-            {params.row.registrations || params.row.currentRegistrations || 0}
-            {params.row.capacity && `/${params.row.capacity}`}
-          </Typography>
-        </Box>
-      ),
+      renderCell: (params) => {
+        const registrationCount = params.row.registrations || params.row.currentRegistrations || 0;
+        const capacity = Number(params.row.capacity) || 0;
+        
+        return (
+          <Box display="flex" alignItems="center" gap={0.5} height="100%">
+            <People sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" fontWeight={500}>
+              {registrationCount}
+              {capacity > 0 && `/${capacity}`}
+            </Typography>
+          </Box>
+        );
+      },
     },
     {
       field: 'price',

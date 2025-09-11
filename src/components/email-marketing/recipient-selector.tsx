@@ -158,11 +158,55 @@ export function RecipientSelector({
   const calculateRecipientCount = async () => {
     try {
       setLoading(true)
-      const response = await api.post('/email-marketing/recipients/count', filters)
+      
+      // Clean up the filters before sending to API
+      const cleanFilters: any = {
+        subscriptions: filters.subscriptions || [],
+        noSubscription: filters.noSubscription || false,
+        status: filters.status || [],
+        roles: filters.roles || [],
+        eventIds: filters.eventIds || [],
+        modulePermissions: filters.modulePermissions || [],
+        brevoListIds: filters.brevoListIds || [],
+        excludeListIds: filters.excludeListIds || [],
+      }
+      
+      // Only add optional fields if they have valid values
+      if (filters.lastLoginDays && filters.lastLoginDays !== '') {
+        const days = parseInt(filters.lastLoginDays)
+        if (!isNaN(days) && days > 0) {
+          cleanFilters.lastLoginDays = days
+        }
+      }
+      
+      if (filters.registrationStartDate && filters.registrationStartDate !== '') {
+        cleanFilters.registrationStartDate = filters.registrationStartDate
+      }
+      
+      if (filters.registrationEndDate && filters.registrationEndDate !== '') {
+        cleanFilters.registrationEndDate = filters.registrationEndDate
+      }
+      
+      if (filters.customEmails && filters.customEmails !== '') {
+        // Split custom emails by comma or newline and clean them
+        const emails = filters.customEmails
+          .split(/[,\n]/)
+          .map((email: string) => email.trim())
+          .filter((email: string) => email !== '')
+        if (emails.length > 0) {
+          cleanFilters.customEmails = emails
+        }
+      }
+      
+      if (filters.savedSegmentId && filters.savedSegmentId !== '') {
+        cleanFilters.savedSegmentId = filters.savedSegmentId
+      }
+      
+      const response = await api.post('/email-marketing/recipients/count', cleanFilters)
       setRecipientCount(response.data.count || 0)
       
       if (onChange) {
-        onChange(filters, response.data.count || 0)
+        onChange(cleanFilters, response.data.count || 0)
       }
     } catch (error) {
       console.error('Error calculating recipients:', error)

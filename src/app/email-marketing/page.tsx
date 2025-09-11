@@ -99,6 +99,8 @@ export default function EmailMarketingPage() {
     total: 0,
     pages: 0,
   })
+  const [avgOpenRate, setAvgOpenRate] = useState<number>(0)
+  const [avgClickRate, setAvgClickRate] = useState<number>(0)
 
   useEffect(() => {
     fetchCampaigns()
@@ -118,6 +120,29 @@ export default function EmailMarketingPage() {
       const response = await api.get(`/email-marketing/campaigns?${params}`)
       setCampaigns(response.data.campaigns)
       setPagination(response.data.pagination)
+      
+      // Calculate average open and click rates from sent campaigns
+      const sentCampaigns = response.data.campaigns.filter((c: Campaign) => 
+        c.status === 'sent' && c.analytics?.sent && c.analytics.sent > 0
+      )
+      
+      if (sentCampaigns.length > 0) {
+        const totalOpenRate = sentCampaigns.reduce((sum: number, c: Campaign) => {
+          const rate = c.analytics?.opened ? (c.analytics.opened / c.analytics.sent!) * 100 : 0
+          return sum + rate
+        }, 0)
+        
+        const totalClickRate = sentCampaigns.reduce((sum: number, c: Campaign) => {
+          const rate = c.analytics?.clicked ? (c.analytics.clicked / c.analytics.sent!) * 100 : 0
+          return sum + rate
+        }, 0)
+        
+        setAvgOpenRate(totalOpenRate / sentCampaigns.length)
+        setAvgClickRate(totalClickRate / sentCampaigns.length)
+      } else {
+        setAvgOpenRate(0)
+        setAvgClickRate(0)
+      }
     } catch (error) {
       console.error('Error fetching campaigns:', error)
       toast.error('Failed to fetch campaigns')
@@ -270,8 +295,13 @@ export default function EmailMarketingPage() {
                     Avg Open Rate
                   </Typography>
                   <Typography variant="h4" fontWeight={600}>
-                    24.3%
+                    {avgOpenRate > 0 ? `${avgOpenRate.toFixed(1)}%` : 'N/A'}
                   </Typography>
+                  {avgOpenRate > 0 && (
+                    <Typography variant="caption" color="text.secondary">
+                      From sent campaigns
+                    </Typography>
+                  )}
                 </Box>
                 <Visibility color="info" sx={{ fontSize: 40, opacity: 0.3 }} />
               </Box>
@@ -285,8 +315,13 @@ export default function EmailMarketingPage() {
                     Avg Click Rate
                   </Typography>
                   <Typography variant="h4" fontWeight={600}>
-                    3.7%
+                    {avgClickRate > 0 ? `${avgClickRate.toFixed(1)}%` : 'N/A'}
                   </Typography>
+                  {avgClickRate > 0 && (
+                    <Typography variant="caption" color="text.secondary">
+                      From sent campaigns
+                    </Typography>
+                  )}
                 </Box>
                 <Analytics color="warning" sx={{ fontSize: 40, opacity: 0.3 }} />
               </Box>

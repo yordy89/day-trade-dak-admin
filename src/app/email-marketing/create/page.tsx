@@ -20,6 +20,7 @@ import {
   Grid,
   Card,
   IconButton,
+  Divider,
 } from '@mui/material'
 import {
   ArrowBack,
@@ -29,10 +30,13 @@ import {
   Save,
   Email,
   CheckCircle,
+  LibraryBooks,
+  Create,
 } from '@mui/icons-material'
 import { AdminLayout } from '@/components/layout/admin-layout'
 import { RecipientSelector } from '@/components/email-marketing/recipient-selector'
 import { EmailEditorComponent } from '@/components/email-marketing/email-editor'
+import { TemplateSelector } from '@/components/email-marketing/template-selector'
 import { api } from '@/lib/api-client'
 import { toast } from 'react-hot-toast'
 import { format } from 'date-fns'
@@ -44,6 +48,8 @@ export default function CreateCampaignPage() {
   const [activeStep, setActiveStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [sendingTest, setSendingTest] = useState(false)
+  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false)
+  const [selectedTemplateName, setSelectedTemplateName] = useState('')
 
   // Campaign data
   const [campaign, setCampaign] = useState({
@@ -53,8 +59,10 @@ export default function CreateCampaignPage() {
     type: 'immediate',
     recipientFilters: {},
     recipientCount: 0,
+    recipientEmails: [] as string[],
     htmlContent: '',
     jsonContent: null,
+    templateId: null,
     testEmails: '',
     scheduledDate: '',
   })
@@ -72,7 +80,12 @@ export default function CreateCampaignPage() {
         return
       }
     } else if (activeStep === 2) {
-      if (!campaign.htmlContent) {
+      console.log('Validating email template')
+      console.log('HTML Content length:', campaign.htmlContent?.length || 0)
+      console.log('HTML Content exists:', !!campaign.htmlContent)
+      console.log('First 100 chars:', campaign.htmlContent?.substring(0, 100))
+      
+      if (!campaign.htmlContent || campaign.htmlContent.trim() === '') {
         toast.error('Please design your email template')
         return
       }
@@ -88,12 +101,32 @@ export default function CreateCampaignPage() {
   const handleSaveDraft = async () => {
     try {
       setLoading(true)
-      const response = await api.post('/email-marketing/campaigns', {
-        ...campaign,
-        status: 'draft',
+      
+      // Prepare campaign data for API
+      const campaignData: any = {
+        name: campaign.name,
+        subject: campaign.subject,
+        previewText: campaign.previewText || undefined,
+        type: campaign.type,
+        templateId: campaign.templateId ? String(campaign.templateId) : undefined,
+        htmlContent: campaign.htmlContent || undefined,
+        jsonContent: campaign.jsonContent || undefined,
+        recipientFilters: campaign.recipientFilters || undefined,
+        recipientEmails: campaign.recipientEmails || undefined,
+        scheduledDate: campaign.scheduledDate || undefined,
+        // Don't send recipientCount or status - these are managed by backend
+      }
+      
+      // Remove undefined values
+      Object.keys(campaignData).forEach(key => {
+        if (campaignData[key] === undefined || campaignData[key] === '') {
+          delete campaignData[key]
+        }
       })
+      
+      const response = await api.post('/email-marketing/campaigns', campaignData)
       toast.success('Campaign saved as draft')
-      router.push(`/email-marketing/${response.data._id}/edit`)
+      router.push('/email-marketing')
     } catch (error) {
       console.error('Error saving draft:', error)
       toast.error('Failed to save draft')
@@ -110,13 +143,32 @@ export default function CreateCampaignPage() {
 
     try {
       setSendingTest(true)
-      const emails = campaign.testEmails.split(',').map((e) => e.trim())
+      const emails = campaign.testEmails.split(',').map((e) => e.trim()).filter(e => e)
+      
+      // Prepare campaign data for API
+      const campaignData: any = {
+        name: campaign.name,
+        subject: campaign.subject,
+        previewText: campaign.previewText || undefined,
+        type: campaign.type,
+        templateId: campaign.templateId ? String(campaign.templateId) : undefined,
+        htmlContent: campaign.htmlContent || undefined,
+        jsonContent: campaign.jsonContent || undefined,
+        recipientFilters: campaign.recipientFilters || undefined,
+        recipientEmails: campaign.recipientEmails || undefined,
+        scheduledDate: campaign.scheduledDate || undefined,
+        testEmails: emails, // Pass emails as array
+      }
+      
+      // Remove undefined values and empty strings
+      Object.keys(campaignData).forEach(key => {
+        if (campaignData[key] === undefined || campaignData[key] === '') {
+          delete campaignData[key]
+        }
+      })
       
       // First save the campaign as draft
-      const campaignResponse = await api.post('/email-marketing/campaigns', {
-        ...campaign,
-        status: 'draft',
-      })
+      const campaignResponse = await api.post('/email-marketing/campaigns', campaignData)
 
       // Then send test email
       await api.post('/email-marketing/campaigns/test', {
@@ -136,7 +188,29 @@ export default function CreateCampaignPage() {
   const handleSendCampaign = async () => {
     try {
       setLoading(true)
-      const response = await api.post('/email-marketing/campaigns', campaign)
+      
+      // Prepare campaign data for API
+      const campaignData: any = {
+        name: campaign.name,
+        subject: campaign.subject,
+        previewText: campaign.previewText || undefined,
+        type: campaign.type,
+        templateId: campaign.templateId ? String(campaign.templateId) : undefined,
+        htmlContent: campaign.htmlContent || undefined,
+        jsonContent: campaign.jsonContent || undefined,
+        recipientFilters: campaign.recipientFilters || undefined,
+        recipientEmails: campaign.recipientEmails || undefined,
+        scheduledDate: campaign.scheduledDate || undefined,
+      }
+      
+      // Remove undefined values and empty strings
+      Object.keys(campaignData).forEach(key => {
+        if (campaignData[key] === undefined || campaignData[key] === '') {
+          delete campaignData[key]
+        }
+      })
+      
+      const response = await api.post('/email-marketing/campaigns', campaignData)
       
       if (campaign.type === 'scheduled' && campaign.scheduledDate) {
         await api.post(`/email-marketing/campaigns/${response.data._id}/schedule`, {
@@ -155,6 +229,21 @@ export default function CreateCampaignPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleTemplateSelect = (template: any) => {
+    // Update campaign with template data - ensure templateId is just the string ID
+    setCampaign(prev => ({
+      ...prev,
+      templateId: typeof template._id === 'object' ? template._id.toString() : template._id,
+      htmlContent: template.htmlContent,
+      jsonContent: template.jsonConfig || null,
+      // Use template defaults if campaign fields are empty
+      subject: prev.subject || template.defaultValues?.subject || '',
+      previewText: prev.previewText || template.defaultValues?.previewText || '',
+    }))
+    setSelectedTemplateName(template.name)
+    toast.success(`Template "${template.name}" loaded`)
   }
 
   const renderStepContent = () => {
@@ -241,18 +330,72 @@ export default function CreateCampaignPage() {
 
       case 2:
         return (
-          <EmailEditorComponent
-            value={campaign.htmlContent}
-            jsonContent={campaign.jsonContent}
-            onChange={(html, json) => {
-              setCampaign({
-                ...campaign,
-                htmlContent: html,
-                jsonContent: json,
-              })
-            }}
-            height="600px"
-          />
+          <Box>
+            {/* Template Selection Bar */}
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="h6" gutterBottom>
+                    Email Template
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedTemplateName 
+                      ? `Using template: ${selectedTemplateName}`
+                      : 'Start from scratch or choose a template'}
+                  </Typography>
+                </Box>
+                <Box display="flex" gap={2}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<LibraryBooks />}
+                    onClick={() => setTemplateSelectorOpen(true)}
+                  >
+                    Choose Template
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Create />}
+                    onClick={() => {
+                      setCampaign(prev => ({
+                        ...prev,
+                        htmlContent: '',
+                        jsonContent: null,
+                        templateId: null,
+                      }))
+                      setSelectedTemplateName('')
+                      toast('Starting with blank template')
+                    }}
+                  >
+                    Start Fresh
+                  </Button>
+                </Box>
+              </Box>
+              
+              {selectedTemplateName && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Template loaded:</strong> {selectedTemplateName}. 
+                    You can modify the content as needed. Changes won't affect the original template.
+                  </Typography>
+                </Alert>
+              )}
+            </Paper>
+
+            {/* Email Editor */}
+            <EmailEditorComponent
+              value={campaign.htmlContent}
+              jsonContent={campaign.jsonContent}
+              onChange={(html, json) => {
+                console.log('Email content changed - HTML length:', html?.length || 0)
+                setCampaign(prev => ({
+                  ...prev,
+                  htmlContent: html,
+                  jsonContent: json,
+                }))
+              }}
+              height="600px"
+            />
+          </Box>
         )
 
       case 3:
@@ -453,6 +596,13 @@ export default function CreateCampaignPage() {
           </Box>
         </Box>
       </Box>
+      
+      {/* Template Selector Dialog */}
+      <TemplateSelector
+        open={templateSelectorOpen}
+        onClose={() => setTemplateSelectorOpen(false)}
+        onSelect={handleTemplateSelect}
+      />
     </AdminLayout>
   )
 }
