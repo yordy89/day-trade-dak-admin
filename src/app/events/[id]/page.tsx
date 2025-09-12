@@ -65,6 +65,7 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true)
   const [registrationsLoading, setRegistrationsLoading] = useState(true)
   const [totalRegistrations, setTotalRegistrations] = useState(0)
+  const [totalAttendees, setTotalAttendees] = useState(0)
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
@@ -120,6 +121,41 @@ export default function EventDetailPage() {
       }))
       setRegistrations(mappedRegistrations)
       setTotalRegistrations(response.total || 0)
+      
+      // Calculate total attendees including additional attendees
+      let attendeesCount = 0
+      registrationsData.forEach((reg: any) => {
+        // Count the registrant
+        attendeesCount += 1
+        
+        // Add additional attendees if present
+        if (reg.additionalInfo?.additionalAttendees) {
+          const additionalAdults = reg.additionalInfo.additionalAttendees.adults || 0
+          const children = reg.additionalInfo.additionalAttendees.children || 0
+          attendeesCount += additionalAdults + children
+        }
+      })
+      
+      // Fetch all registrations to get complete attendee count if we're on a paginated view
+      if (response.total > paginationModel.pageSize) {
+        const allRegsResponse = await eventService.getEventRegistrations(eventId, {
+          page: 1,
+          limit: response.total,
+        })
+        let totalAttendeesCount = 0
+        const allRegs = allRegsResponse.registrations || []
+        allRegs.forEach((reg: any) => {
+          totalAttendeesCount += 1
+          if (reg.additionalInfo?.additionalAttendees) {
+            const additionalAdults = reg.additionalInfo.additionalAttendees.adults || 0
+            const children = reg.additionalInfo.additionalAttendees.children || 0
+            totalAttendeesCount += additionalAdults + children
+          }
+        })
+        setTotalAttendees(totalAttendeesCount)
+      } else {
+        setTotalAttendees(attendeesCount)
+      }
     } catch (error) {
       showError('Error al cargar los registros')
       console.error('Error fetching registrations:', error)
@@ -680,6 +716,28 @@ export default function EventDetailPage() {
                   </Typography>
                 </Box>
                 <CheckCircle sx={{ fontSize: 40, color: 'info.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Total Attendees Card */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
+                    Total Asistentes
+                  </Typography>
+                  <Typography variant="h4" fontWeight={600}>
+                    {totalAttendees}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Incluye acompañantes
+                  </Typography>
+                </Box>
+                <People sx={{ fontSize: 40, color: 'secondary.main', opacity: 0.3 }} />
               </Box>
             </CardContent>
           </Card>

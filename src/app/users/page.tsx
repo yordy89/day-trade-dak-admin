@@ -66,10 +66,23 @@ export default function UsersPage() {
         return
       }
 
-      // Use client-side export
-      await ExportUtils.exportFromAPI(format, params, adminToken)
+      // Show initial loading toast
+      const loadingToast = toast.loading('Fetching users for export...')
+
+      // Use client-side export with progress callback
+      await ExportUtils.exportFromAPI(
+        format, 
+        params, 
+        adminToken,
+        (fetched, total) => {
+          // Update loading toast with progress
+          toast.loading(`Fetching users: ${fetched}/${total}...`, { id: loadingToast })
+        }
+      )
       
-      toast.success(`Users exported successfully as ${format.toUpperCase()}`)
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast)
+      toast.success(`${format.toUpperCase()} exported successfully with all users`)
       setExportAnchorEl(null)
     } catch (error: any) {
       console.error('Export error:', error)

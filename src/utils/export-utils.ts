@@ -197,14 +197,23 @@ export class ExportUtils {
   static async exportFromAPI(
     format: 'csv' | 'pdf',
     params: any,
-    token: string
+    token: string,
+    onProgress?: (fetched: number, total: number) => void
   ): Promise<void> {
     try {
-      // Fetch all users with filters from API
-      const response = await fetch(
+      // Fetch all users with pagination to bypass backend limit
+      const allUsers: ExportUser[] = [];
+      let page = 1;
+      const limit = 100; // Backend max limit
+      let hasMore = true;
+      let totalUsers = 0;
+
+      // First, get the total count
+      const firstResponse = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/admin/users?${new URLSearchParams({
           ...params,
-          limit: '10000', // Get all users
+          limit: String(limit),
+          page: '1',
         })}`,
         {
           headers: {
@@ -213,17 +222,72 @@ export class ExportUtils {
         }
       );
 
-      if (!response.ok) {
+      if (!firstResponse.ok) {
         throw new Error('Failed to fetch users');
       }
 
-      const data = await response.json();
-      const users = data.users || [];
+      const firstData = await firstResponse.json();
+      totalUsers = firstData.total || 0;
+      allUsers.push(...(firstData.users || []));
+      
+      // Report initial progress
+      if (onProgress) {
+        onProgress(allUsers.length, totalUsers);
+      }
+
+      // If we have more pages, continue fetching
+      if (totalUsers > limit) {
+        page = 2;
+        
+        while (hasMore && allUsers.length < totalUsers) {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/admin/users?${new URLSearchParams({
+              ...params,
+              limit: String(limit),
+              page: String(page),
+            })}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch users');
+          }
+
+          const data = await response.json();
+          const users = data.users || [];
+          
+          allUsers.push(...users);
+          
+          // Report progress
+          if (onProgress) {
+            onProgress(allUsers.length, totalUsers);
+          }
+          
+          // Check if we have fetched all users
+          if (allUsers.length >= totalUsers || users.length < limit) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+          
+          // Safety check to prevent infinite loops
+          if (page > 1000) {
+            console.warn('Reached maximum page limit, stopping pagination');
+            hasMore = false;
+          }
+        }
+      }
+
+      console.log(`Exporting ${allUsers.length} users (Total: ${totalUsers})`);
 
       if (format === 'csv') {
-        this.exportToCSV(users);
+        this.exportToCSV(allUsers);
       } else if (format === 'pdf') {
-        this.exportToPDF(users, params);
+        this.exportToPDF(allUsers, params);
       }
     } catch (error) {
       console.error('Export error:', error);
