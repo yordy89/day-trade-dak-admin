@@ -130,20 +130,47 @@ export function RecipientSelector({
   const fetchEvents = async () => {
     try {
       const response = await api.get('/admin/events')
-      setEvents(response.data.events || [])
+      const eventsWithRegistrations = await Promise.all(
+        (response.data.events || []).map(async (event: any) => {
+          try {
+            // Fetch registration count for each event
+            const regResponse = await api.get(`/admin/events/${event._id}/registrations`, {
+              params: { limit: 1 } // Just get the count
+            })
+            return {
+              ...event,
+              registrationCount: regResponse.data.total || 0
+            }
+          } catch (error) {
+            console.error(`Error fetching registrations for event ${event._id}:`, error)
+            return {
+              ...event,
+              registrationCount: 0
+            }
+          }
+        })
+      )
+      setEvents(eventsWithRegistrations)
     } catch (error) {
       console.error('Error fetching events:', error)
     }
   }
 
   const fetchBrevoLists = async () => {
-    // Mock data for now - should fetch from API
-    setBrevoLists([
-      { id: 4, name: 'Event List' },
-      { id: 5, name: 'Community Event List' },
-      { id: 6, name: 'Master Course List' },
-      { id: 7, name: 'VIP Event List' },
-    ])
+    try {
+      const response = await api.get('/email-marketing/recipients/brevo-lists')
+      const lists = response.data || []
+      setBrevoLists(lists)
+    } catch (error) {
+      console.error('Error fetching Brevo lists:', error)
+      // Fallback to default lists if API fails
+      setBrevoLists([
+        { id: 4, name: 'Event List' },
+        { id: 5, name: 'Community Event List' },
+        { id: 6, name: 'Master Course List' },
+        { id: 7, name: 'VIP Event List' },
+      ])
+    }
   }
 
   const fetchSavedSegments = async () => {
@@ -159,16 +186,32 @@ export function RecipientSelector({
     try {
       setLoading(true)
       
-      // Clean up the filters before sending to API
-      const cleanFilters: any = {
-        subscriptions: filters.subscriptions || [],
-        noSubscription: filters.noSubscription || false,
-        status: filters.status || [],
-        roles: filters.roles || [],
-        eventIds: filters.eventIds || [],
-        modulePermissions: filters.modulePermissions || [],
-        brevoListIds: filters.brevoListIds || [],
-        excludeListIds: filters.excludeListIds || [],
+      // Clean up the filters before sending to API - only send non-empty values
+      const cleanFilters: any = {}
+      
+      if (filters.subscriptions?.length) {
+        cleanFilters.subscriptions = filters.subscriptions
+      }
+      if (filters.noSubscription === true) {
+        cleanFilters.noSubscription = true
+      }
+      if (filters.status?.length) {
+        cleanFilters.status = filters.status
+      }
+      if (filters.roles?.length) {
+        cleanFilters.roles = filters.roles
+      }
+      if (filters.eventIds?.length) {
+        cleanFilters.eventIds = filters.eventIds
+      }
+      if (filters.modulePermissions?.length) {
+        cleanFilters.modulePermissions = filters.modulePermissions
+      }
+      if (filters.brevoListIds?.length) {
+        cleanFilters.brevoListIds = filters.brevoListIds
+      }
+      if (filters.excludeListIds?.length) {
+        cleanFilters.excludeListIds = filters.excludeListIds
       }
       
       // Only add optional fields if they have valid values
@@ -202,7 +245,11 @@ export function RecipientSelector({
         cleanFilters.savedSegmentId = filters.savedSegmentId
       }
       
+      console.log('Sending filters to count endpoint:', cleanFilters)
+      console.log('EventIds being sent:', cleanFilters.eventIds)
+      
       const response = await api.post('/email-marketing/recipients/count', cleanFilters)
+      console.log('Recipient count response:', response.data)
       setRecipientCount(response.data.count || 0)
       
       if (onChange) {
@@ -522,15 +569,23 @@ export function RecipientSelector({
                     `${(selected as string[]).length} event(s) selected`
                   }
                 >
-                  {events.map((event: any) => (
-                    <MenuItem key={event._id} value={event._id}>
-                      <Checkbox checked={filters.eventIds.includes(event._id)} />
-                      <ListItemText
-                        primary={event.name || event.title}
-                        secondary={`${event.currentRegistrations || 0} registrations`}
-                      />
-                    </MenuItem>
-                  ))}
+                  {events.map((event: any) => {
+                    const eventDate = event.date ? new Date(event.date).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    }) : 'Sin fecha'
+                    
+                    return (
+                      <MenuItem key={event._id} value={event._id}>
+                        <Checkbox checked={filters.eventIds.includes(event._id)} />
+                        <ListItemText
+                          primary={`${event.name || event.title} - ${eventDate}`}
+                          secondary={`${event.registrationCount || 0} registrations`}
+                        />
+                      </MenuItem>
+                    )
+                  })}
                 </Select>
               </FormControl>
             </Box>
@@ -573,7 +628,10 @@ export function RecipientSelector({
                       {brevoLists.map((list: any) => (
                         <MenuItem key={list.id} value={list.id}>
                           <Checkbox checked={filters.brevoListIds.includes(list.id)} />
-                          <ListItemText primary={list.name} />
+                          <ListItemText 
+                            primary={list.name} 
+                            secondary={`${list.totalSubscribers || 0} subscribers`}
+                          />
                         </MenuItem>
                       ))}
                     </Select>
@@ -594,7 +652,10 @@ export function RecipientSelector({
                       {brevoLists.map((list: any) => (
                         <MenuItem key={list.id} value={list.id}>
                           <Checkbox checked={filters.excludeListIds.includes(list.id)} />
-                          <ListItemText primary={list.name} />
+                          <ListItemText 
+                            primary={list.name} 
+                            secondary={`${list.totalSubscribers || 0} subscribers`}
+                          />
                         </MenuItem>
                       ))}
                     </Select>

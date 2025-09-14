@@ -41,6 +41,7 @@ import {
 } from '@mui/icons-material'
 import { AdminLayout } from '@/components/layout/admin-layout'
 import { EmailEditorComponent } from '@/components/email-marketing/email-editor'
+import { ConfirmDialog } from '@/components/dialogs/confirm-dialog'
 import { api } from '@/lib/api-client'
 import { toast } from 'react-hot-toast'
 import { format } from 'date-fns'
@@ -83,13 +84,16 @@ export default function TemplatesPage() {
   const [loading, setLoading] = useState(true)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
+  const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editorDialogOpen, setEditorDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [currentTab, setCurrentTab] = useState(0)
   const [filters, setFilters] = useState({
     category: 'all',
     isPublic: 'all',
   })
+  const [templateBeingEdited, setTemplateBeingEdited] = useState<Template | null>(null)
 
   const [newTemplate, setNewTemplate] = useState({
     name: '',
@@ -156,7 +160,7 @@ export default function TemplatesPage() {
       })
       fetchTemplates()
       // Open editor for new template
-      setSelectedTemplate(response.data)
+      setTemplateBeingEdited(response.data)
       setEditorDialogOpen(true)
     } catch (error) {
       console.error('Error creating template:', error)
@@ -179,13 +183,14 @@ export default function TemplatesPage() {
   }
 
   const handleDeleteTemplate = async () => {
-    if (!selectedTemplate) return
-
-    if (!confirm('Are you sure you want to delete this template?')) return
+    if (!templateToDelete) return
 
     try {
-      await api.delete(`/email-marketing/templates/${selectedTemplate._id}`)
+      await api.delete(`/email-marketing/templates/${templateToDelete._id}`)
       toast.success('Template deleted successfully')
+      setDeleteDialogOpen(false)
+      setTemplateToDelete(null)
+      setSelectedTemplate(null)
       handleMenuClose()
       fetchTemplates()
     } catch (error) {
@@ -194,16 +199,30 @@ export default function TemplatesPage() {
     }
   }
 
+  const handleEditTemplate = async (template: Template) => {
+    try {
+      // Fetch full template details including jsonConfig
+      const response = await api.get(`/email-marketing/templates/${template._id}`)
+      setTemplateBeingEdited(response.data)
+      setEditorDialogOpen(true)
+    } catch (error) {
+      console.error('Error fetching template details:', error)
+      toast.error('Failed to load template')
+    }
+  }
+
   const handleSaveTemplate = async (html: string, json: any) => {
-    if (!selectedTemplate) return
+    if (!templateBeingEdited) return
 
     try {
-      await api.patch(`/email-marketing/templates/${selectedTemplate._id}`, {
+      await api.patch(`/email-marketing/templates/${templateBeingEdited._id}`, {
         htmlContent: html,
         jsonConfig: json,
       })
       toast.success('Template saved successfully')
       fetchTemplates()
+      setEditorDialogOpen(false)
+      setTemplateBeingEdited(null)
     } catch (error) {
       console.error('Error saving template:', error)
       toast.error('Failed to save template')
@@ -304,10 +323,7 @@ export default function TemplatesPage() {
               <Button
                 size="small"
                 startIcon={<Edit />}
-                onClick={() => {
-                  setSelectedTemplate(template)
-                  setEditorDialogOpen(true)
-                }}
+                onClick={() => handleEditTemplate(template)}
               >
                 Edit
               </Button>
@@ -427,7 +443,9 @@ export default function TemplatesPage() {
         >
           <MenuItem
             onClick={() => {
-              setEditorDialogOpen(true)
+              if (selectedTemplate) {
+                handleEditTemplate(selectedTemplate)
+              }
               handleMenuClose()
             }}
           >
@@ -438,7 +456,16 @@ export default function TemplatesPage() {
             <ContentCopy sx={{ mr: 1 }} fontSize="small" />
             Duplicate
           </MenuItem>
-          <MenuItem onClick={handleDeleteTemplate} sx={{ color: 'error.main' }}>
+          <MenuItem 
+            onClick={() => {
+              if (selectedTemplate) {
+                setTemplateToDelete(selectedTemplate)
+                setDeleteDialogOpen(true)
+              }
+              handleMenuClose()
+            }} 
+            sx={{ color: 'error.main' }}
+          >
             <Delete sx={{ mr: 1 }} fontSize="small" />
             Delete
           </MenuItem>
@@ -509,7 +536,10 @@ export default function TemplatesPage() {
         {/* Template Editor Dialog */}
         <Dialog
           open={editorDialogOpen}
-          onClose={() => setEditorDialogOpen(false)}
+          onClose={() => {
+            setEditorDialogOpen(false)
+            setTemplateBeingEdited(null)
+          }}
           maxWidth="lg"
           fullWidth
           PaperProps={{
@@ -517,22 +547,40 @@ export default function TemplatesPage() {
           }}
         >
           <DialogTitle>
-            Edit Template: {selectedTemplate?.name}
+            Edit Template: {templateBeingEdited?.name}
           </DialogTitle>
           <DialogContent sx={{ p: 0 }}>
-            {selectedTemplate && (
+            {templateBeingEdited && (
               <EmailEditorComponent
-                value={selectedTemplate.htmlContent}
-                jsonContent={selectedTemplate.jsonConfig}
+                value={templateBeingEdited.htmlContent}
+                jsonContent={templateBeingEdited.jsonConfig}
                 onSave={handleSaveTemplate}
                 height="calc(90vh - 140px)"
               />
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setEditorDialogOpen(false)}>Close</Button>
+            <Button onClick={() => {
+              setEditorDialogOpen(false)
+              setTemplateBeingEdited(null)
+            }}>Close</Button>
           </DialogActions>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          onClose={() => {
+            setDeleteDialogOpen(false)
+            setTemplateToDelete(null)
+          }}
+          onConfirm={handleDeleteTemplate}
+          title="Delete Template"
+          message={`Are you sure you want to delete the template "${templateToDelete?.name || 'this template'}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmColor="error"
+        />
       </Box>
     </AdminLayout>
   )
