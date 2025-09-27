@@ -41,6 +41,19 @@ import {
   ModuleType,
   MODULE_DISPLAY_NAMES,
 } from '@/types/module-permission';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+} from '@mui/material';
+import { Close, ContentCopy, CheckCircleOutline, Warning } from '@mui/icons-material';
 
 interface EventData {
   _id: string;
@@ -66,6 +79,28 @@ interface EventRegistration {
   createdAt: string;
 }
 
+interface CreatedUser {
+  email: string;
+  firstName: string;
+  lastName: string;
+  temporaryPassword: string;
+  userId: string;
+}
+
+interface ResultError {
+  email: string;
+  error: string;
+}
+
+interface PermissionResultData {
+  permissionsGranted: number;
+  usersCreated: number;
+  usersUpdated: number;
+  totalProcessed: number;
+  createdUsers: CreatedUser[];
+  errors: ResultError[];
+}
+
 export function EventModulePermissions() {
   const [events, setEvents] = useState<EventData[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
@@ -75,6 +110,10 @@ export function EventModulePermissions() {
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resultDialog, setResultDialog] = useState<{
+    open: boolean;
+    data: PermissionResultData | null;
+  }>({ open: false, data: null });
   const { showSuccess, showError } = useSnackbar();
 
   useEffect(() => {
@@ -126,31 +165,43 @@ export function EventModulePermissions() {
 
     try {
       setSubmitting(true);
-      
-      // Get unique user IDs from registrations, filtering out any invalid ones
-      const userIds = [...new Set(registrations
-        .filter(reg => reg.user && reg.user._id)
-        .map(reg => reg.user._id))];
-      
-      // Grant permissions for each selected module
-      const results = await Promise.all(
-        selectedModules.map(moduleType =>
-          modulePermissionService.bulkGrant({
-            userIds,
-            moduleType,
-            expiresAt: expiresAt?.toISOString(),
-            reason: reason || `Acceso por evento: ${selectedEvent.title}`,
-          })
-        )
-      );
 
-      const totalGranted = results.reduce((sum, result) => sum + result.granted, 0);
-      const totalAttempted = results.reduce((sum, result) => sum + result.total, 0);
+      // Prepare participants data with user info
+      const participants = registrations.map(reg => ({
+        userId: reg.user?._id,
+        email: reg.user?.email || '',
+        firstName: reg.user?.firstName || '',
+        lastName: reg.user?.lastName || '',
+        isRegistered: !!reg.user?._id,
+      }));
 
-      showSuccess(
-        `Permisos otorgados exitosamente: ${totalGranted} de ${totalAttempted} para ${userIds.length} usuarios`
-      );
-      
+      // Call the new endpoint that handles user creation
+      const result = await modulePermissionService.grantEventPermissions({
+        participants,
+        moduleTypes: selectedModules,
+        expiresAt: expiresAt?.toISOString(),
+        reason: reason || `Acceso por evento: ${selectedEvent.title}`,
+        eventId: selectedEvent._id,
+        eventName: selectedEvent.title,
+      });
+
+      // Show results dialog
+      setResultDialog({
+        open: true,
+        data: result,
+      });
+
+      // Show success message
+      if (result.usersCreated > 0) {
+        showSuccess(
+          `✅ Proceso completado: ${result.permissionsGranted} permisos otorgados, ${result.usersCreated} nuevos usuarios creados`
+        );
+      } else {
+        showSuccess(
+          `✅ Permisos otorgados exitosamente: ${result.permissionsGranted} permisos para ${result.totalProcessed} usuarios`
+        );
+      }
+
       // Reset form
       setSelectedModules([]);
       setExpiresAt(null);
@@ -167,6 +218,145 @@ export function EventModulePermissions() {
       prev.includes(moduleType)
         ? prev.filter(m => m !== moduleType)
         : [...prev, moduleType]
+    );
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showSuccess('Copiado al portapapeles');
+  };
+
+  const ResultDialog = () => {
+    if (!resultDialog.data) return null;
+
+    const { usersCreated, usersUpdated, permissionsGranted, createdUsers, errors } = resultDialog.data;
+
+    return (
+      <Dialog
+        open={resultDialog.open}
+        onClose={() => setResultDialog({ open: false, data: null })}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              Resultado del Proceso de Permisos
+            </Typography>
+            <IconButton
+              onClick={() => setResultDialog({ open: false, data: null })}
+              size="small"
+            >
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3}>
+            {/* Summary Stats */}
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Card variant="outlined" sx={{ flex: 1, minWidth: 150 }}>
+                <CardContent>
+                  <Typography variant="h4" color="primary">
+                    {permissionsGranted}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Permisos Otorgados
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined" sx={{ flex: 1, minWidth: 150 }}>
+                <CardContent>
+                  <Typography variant="h4" color="success.main">
+                    {usersCreated}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Usuarios Creados
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined" sx={{ flex: 1, minWidth: 150 }}>
+                <CardContent>
+                  <Typography variant="h4" color="info.main">
+                    {usersUpdated}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Usuarios Actualizados
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
+
+            {/* Created Users List */}
+            {createdUsers && createdUsers.length > 0 && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  <CheckCircleOutline sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1, color: 'success.main' }} />
+                  Nuevos Usuarios Creados
+                </Typography>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Se han enviado correos electrónicos a los nuevos usuarios con sus credenciales de acceso.
+                </Alert>
+                <List dense>
+                  {createdUsers.map((user, index) => (
+                    <React.Fragment key={user.userId}>
+                      <ListItem>
+                        <ListItemText
+                          primary={`${user.firstName} ${user.lastName}`}
+                          secondary={
+                            <Stack spacing={0.5}>
+                              <Typography variant="caption">
+                                Email: {user.email}
+                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="caption">
+                                  Contraseña temporal: {user.temporaryPassword}
+                                </Typography>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => copyToClipboard(user.temporaryPassword)}
+                                >
+                                  <ContentCopy fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            </Stack>
+                          }
+                        />
+                      </ListItem>
+                      {index < createdUsers.length - 1 && <Divider />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              </Box>
+            )}
+
+            {/* Errors */}
+            {errors && errors.length > 0 && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom color="error">
+                  <Warning sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
+                  Errores Encontrados
+                </Typography>
+                <List dense>
+                  {errors.map((error, index) => (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={error.email}
+                        secondary={error.error}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResultDialog({ open: false, data: null })}>
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     );
   };
 
@@ -392,6 +582,9 @@ export function EventModulePermissions() {
             Selecciona un evento para gestionar los permisos de sus participantes
           </Alert>
         )}
+
+        {/* Result Dialog */}
+        <ResultDialog />
       </Stack>
     </Box>
   );

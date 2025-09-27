@@ -6,6 +6,8 @@ import { AdminLayout } from '@/components/layout/admin-layout';
 import { VideoUploadWorkflow } from '@/components/content/video-upload-workflow';
 import { VideoList } from '@/components/content/video-list';
 import { ContentStats } from '@/components/content/content-stats';
+import { RecordingsList } from '@/components/content/recordings-list';
+import { EditedVideoUpload } from '@/components/content/edited-video-upload';
 import { io, Socket } from 'socket.io-client';
 import { useSnackbar } from 'notistack';
 
@@ -113,6 +115,9 @@ export default function ContentPage() {
           <Tabs value={tabValue} onChange={handleTabChange}>
             <Tab label="Upload Video" />
             <Tab label="Video Library" />
+            <Tab label="LiveKit Recordings" />
+            <Tab label="Upload Edited Video" />
+            <Tab label="Edited Videos" />
           </Tabs>
         </Box>
 
@@ -149,6 +154,49 @@ export default function ContentPage() {
 
         <TabPanel value={tabValue} index={1}>
           <VideoList refreshTrigger={refreshTrigger} />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
+          <RecordingsList type="raw" refreshTrigger={refreshTrigger} />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={8}>
+              <EditedVideoUpload
+                onUploadComplete={() => {
+                  setRefreshTrigger(prev => prev + 1);
+                  setTabValue(4); // Switch to edited videos tab
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Upload Guidelines
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Upload your edited recordings here
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Maximum file size: 10GB
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Supported formats: MP4, MOV, AVI, MKV, WebM
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Provide a clear name for easy identification
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  • Videos will be stored securely in the cloud
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={4}>
+          <RecordingsList type="edited" refreshTrigger={refreshTrigger} />
         </TabPanel>
       </Box>
     </AdminLayout>

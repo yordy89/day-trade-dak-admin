@@ -55,6 +55,40 @@ export class ModulePermissionService {
     const response = await api.post('/admin/module-permissions/expire')
     return response.data
   }
+
+  async grantEventPermissions(data: {
+    participants: Array<{
+      userId?: string
+      email: string
+      firstName: string
+      lastName: string
+      isRegistered?: boolean
+    }>
+    moduleTypes: string[]
+    expiresAt?: string
+    reason?: string
+    eventId?: string
+    eventName?: string
+  }): Promise<{
+    permissionsGranted: number
+    usersCreated: number
+    usersUpdated: number
+    totalProcessed: number
+    createdUsers: Array<{
+      email: string
+      firstName: string
+      lastName: string
+      temporaryPassword: string
+      userId: string
+    }>
+    errors: Array<{
+      email: string
+      error: string
+    }>
+  }> {
+    const response = await api.post('/admin/module-permissions/grant-event-permissions', data)
+    return response.data
+  }
 }
 
 // Export singleton instance
