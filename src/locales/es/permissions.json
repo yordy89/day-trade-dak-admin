@@ -29,6 +29,10 @@
     "payments": "Pagos",
     "meetings": "Reuniones",
     "events": "Eventos",
+    "emailMarketing": "Marketing por Email",
+    "financing": "Financiamiento",
+    "affiliates": "Afiliados",
+    "messages": "Mensajes",
     "content": "Contenido",
     "courses": "Cursos",
     "announcements": "Anuncios",
@@ -39,8 +43,7 @@
     "auditLogs": "Registros de Auditoría",
     "permissions": "Permisos",
     "contactMessages": "Mensajes de Contacto",
-    "modulePermissions": "Permisos de Módulos",
-    "affiliates": "Afiliados"
+    "modulePermissions": "Permisos de Módulos"
   },
   "dialog": {
     "reset": {

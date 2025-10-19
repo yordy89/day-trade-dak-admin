@@ -5,6 +5,10 @@ export interface PermissionSet {
   payments: boolean
   meetings: boolean
   events: boolean
+  emailMarketing: boolean // Email Marketing
+  financing: boolean // Financing
+  affiliates: boolean // Afiliados
+  messages: boolean // Contact Messages
   content: boolean
   courses: boolean
   announcements: boolean
@@ -15,8 +19,7 @@ export interface PermissionSet {
   auditLogs: boolean
   permissions?: boolean // Only visible for super_admin
   contactMessages: boolean
-  modulePermissions: boolean // New: Permisos de Módulos
-  affiliates: boolean // New: Afiliados
+  modulePermissions: boolean // Permisos de Módulos
 }
 
 export interface AdminUserWithPermissions {
@@ -36,6 +39,10 @@ export interface UpdatePermissionsRequest {
   payments?: boolean
   meetings?: boolean
   events?: boolean
+  emailMarketing?: boolean
+  financing?: boolean
+  affiliates?: boolean
+  messages?: boolean
   content?: boolean
   courses?: boolean
   announcements?: boolean
@@ -47,7 +54,6 @@ export interface UpdatePermissionsRequest {
   permissions?: boolean
   contactMessages?: boolean
   modulePermissions?: boolean
-  affiliates?: boolean
 }
 
 export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
@@ -57,6 +63,10 @@ export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
   payments: false,
   meetings: false,
   events: false,
+  emailMarketing: false,
+  financing: false,
+  affiliates: false,
+  messages: true,
   content: false,
   courses: false,
   announcements: false,
@@ -68,7 +78,6 @@ export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
   permissions: false,
   contactMessages: true,
   modulePermissions: false, // Admins don't get module permissions by default
-  affiliates: false, // Admins don't get affiliates permission by default
 }
 
 export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
@@ -78,6 +87,10 @@ export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
   payments: true,
   meetings: true,
   events: true,
+  emailMarketing: true,
+  financing: true,
+  affiliates: true,
+  messages: true,
   content: true,
   courses: true,
   announcements: true,
@@ -89,5 +102,4 @@ export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
   permissions: true,
   contactMessages: true,
   modulePermissions: true, // Super admins have module permissions
-  affiliates: true, // Super admins have affiliates permission
 }

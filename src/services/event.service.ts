@@ -28,14 +28,26 @@ export interface EventRegistration {
     email: string;
     phone?: string;
   };
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
   ticketType: 'regular' | 'vip';
   status: 'pending' | 'confirmed' | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'failed';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'completed';
   paymentAmount: number;
   stripePaymentIntentId?: string;
   registrationDate: string;
   createdAt: string;
   updatedAt: string;
+  additionalInfo?: any;
+  checkedIn?: boolean;
+  // Partial payment fields
+  totalAmount?: number;
+  totalPaid?: number;
+  remainingBalance?: number;
+  isFullyPaid?: boolean;
+  paymentMode?: 'full' | 'partial';
 }
 
 export interface EventsResponse {

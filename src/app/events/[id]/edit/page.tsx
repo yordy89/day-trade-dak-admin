@@ -81,6 +81,11 @@ export default function EditEventPage() {
     status: 'active' as 'active' | 'draft' | 'completed' | 'cancelled',
     featuredInCRM: false,
     showInLandingPage: false,
+    // Partial payment settings
+    paymentMode: 'full_only' as 'full_only' | 'partial_allowed',
+    minimumDepositAmount: 0,
+    depositPercentage: 50,
+    minimumInstallmentAmount: 50,
     metadata: {
       hotel: '',
       hotelAddress: '',
@@ -137,6 +142,11 @@ export default function EditEventPage() {
         status: mappedEvent.status || 'active',
         featuredInCRM: mappedEvent.featuredInCRM || false,
         showInLandingPage: mappedEvent.showInLandingPage || false,
+        // Load payment settings
+        paymentMode: (mappedEvent as any).paymentMode || 'full_only',
+        minimumDepositAmount: (mappedEvent as any).minimumDepositAmount || 0,
+        depositPercentage: (mappedEvent as any).depositPercentage || 50,
+        minimumInstallmentAmount: (mappedEvent as any).minimumInstallmentAmount || 50,
         metadata: {
           hotel: mappedEvent.metadata?.hotel || '',
           hotelAddress: mappedEvent.metadata?.hotelAddress || '',
@@ -193,6 +203,14 @@ export default function EditEventPage() {
       if (formData.vipPrice > 0) eventData.vipPrice = formData.vipPrice
       if (formData.price > 0) eventData.price = formData.price
       if (formData.capacity > 0) eventData.capacity = formData.capacity
+
+      // Add payment settings
+      eventData.paymentMode = formData.paymentMode
+      if (formData.paymentMode === 'partial_allowed') {
+        eventData.minimumDepositAmount = formData.minimumDepositAmount
+        eventData.depositPercentage = formData.depositPercentage
+        eventData.minimumInstallmentAmount = formData.minimumInstallmentAmount
+      }
 
       // Add metadata only if it has content
       const metadata: any = {}
@@ -818,6 +836,101 @@ export default function EditEventPage() {
                           ),
                         }}
                       />
+                    </Stack>
+                  </CardContent>
+                </Card>
+
+                {/* Payment Settings */}
+                <Card sx={{ mt: 3 }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Configuración de Pagos
+                    </Typography>
+
+                    <Stack spacing={3}>
+                      <FormControl fullWidth>
+                        <InputLabel>Modo de Pago</InputLabel>
+                        <Select
+                          value={formData.paymentMode}
+                          label="Modo de Pago"
+                          onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value as any })}
+                        >
+                          <MenuItem value="full_only">Solo Pago Completo</MenuItem>
+                          <MenuItem value="partial_allowed">Permitir Pagos Parciales</MenuItem>
+                        </Select>
+                      </FormControl>
+
+                      {formData.paymentMode === 'partial_allowed' && (
+                        <Alert severity="info">
+                          Los pagos parciales permiten a los usuarios pagar un depósito inicial y el resto en cuotas.
+                        </Alert>
+                      )}
+
+                      {formData.paymentMode === 'partial_allowed' && (
+                        <>
+                          <TextField
+                            fullWidth
+                            type="number"
+                            label="Depósito Mínimo (USD)"
+                            value={formData.minimumDepositAmount}
+                            onChange={(e) => setFormData({ ...formData, minimumDepositAmount: Number(e.target.value) })}
+                            helperText="Monto mínimo que debe pagar como depósito"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <AttachMoney />
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+
+                          <TextField
+                            fullWidth
+                            type="number"
+                            label="Porcentaje de Depósito (%)"
+                            value={formData.depositPercentage}
+                            onChange={(e) => setFormData({ ...formData, depositPercentage: Number(e.target.value) })}
+                            helperText="Porcentaje del precio total sugerido como depósito"
+                            inputProps={{ min: 0, max: 100 }}
+                          />
+
+                          <TextField
+                            fullWidth
+                            type="number"
+                            label="Pago Mínimo de Cuota (USD)"
+                            value={formData.minimumInstallmentAmount}
+                            onChange={(e) => setFormData({ ...formData, minimumInstallmentAmount: Number(e.target.value) })}
+                            helperText="Monto mínimo para pagos adicionales"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <AttachMoney />
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+
+                          <Divider />
+
+                          <Box>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                              Ejemplo de Configuración:
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" component="div">
+                              • Precio del evento: {`$${formData.price || 0}`}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" component="div">
+                              • Depósito sugerido ({formData.depositPercentage}%): {`$${((formData.price || 0) * (formData.depositPercentage / 100)).toFixed(2)}`}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" component="div">
+                              • Depósito mínimo: {`$${formData.minimumDepositAmount}`}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" component="div">
+                              • Saldo restante: {`$${((formData.price || 0) - ((formData.price || 0) * (formData.depositPercentage / 100))).toFixed(2)}`}
+                            </Typography>
+                          </Box>
+                        </>
+                      )}
                     </Stack>
                   </CardContent>
                 </Card>

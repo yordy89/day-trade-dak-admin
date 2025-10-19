@@ -73,7 +73,7 @@ const bottomNavigation: NavigationItem[] = [
   { name: 'settings', href: '/settings', icon: Settings, permission: 'settings' },
   // { name: 'audit_logs', href: '/audit-logs', icon: Security, permission: 'auditLogs' }, // Removed - no page
   { name: 'permissions', href: '/permissions', icon: Shield, permission: 'permissions' },
-  { name: 'module_permissions', href: '/module-permissions', icon: Security, permission: 'permissions' },
+  { name: 'module_permissions', href: '/module-permissions', icon: Security, permission: 'modulePermissions' },
 ]
 
 interface SidebarProps {

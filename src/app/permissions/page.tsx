@@ -62,6 +62,10 @@ export default function PermissionsPage() {
     payments: t('permissions:permissions.payments'),
     meetings: t('permissions:permissions.meetings'),
     events: t('permissions:permissions.events'),
+    emailMarketing: t('permissions:permissions.emailMarketing'),
+    financing: t('permissions:permissions.financing'),
+    affiliates: t('permissions:permissions.affiliates'),
+    messages: t('permissions:permissions.messages'),
     content: t('permissions:permissions.content'),
     courses: t('permissions:permissions.courses'),
     announcements: t('permissions:permissions.announcements'),
@@ -73,7 +77,6 @@ export default function PermissionsPage() {
     permissions: t('permissions:permissions.permissions'),
     contactMessages: t('permissions:permissions.contactMessages'),
     modulePermissions: t('permissions:permissions.modulePermissions'),
-    affiliates: t('permissions:permissions.affiliates'),
   }
 
   const permissionGroups = [
@@ -83,7 +86,7 @@ export default function PermissionsPage() {
     },
     {
       title: t('permissions:groups.payments'),
-      permissions: ['subscriptions', 'payments', 'transactions', 'affiliates'] as (keyof PermissionSet)[],
+      permissions: ['subscriptions', 'payments', 'transactions', 'financing', 'affiliates'] as (keyof PermissionSet)[],
     },
     {
       title: t('permissions:groups.education'),
@@ -91,11 +94,11 @@ export default function PermissionsPage() {
     },
     {
       title: t('permissions:groups.communication'),
-      permissions: ['announcements', 'analytics', 'reports', 'contactMessages'] as (keyof PermissionSet)[],
+      permissions: ['announcements', 'emailMarketing', 'messages', 'contactMessages'] as (keyof PermissionSet)[],
     },
     {
       title: t('permissions:groups.administration'),
-      permissions: ['auditLogs', 'permissions', 'modulePermissions'] as (keyof PermissionSet)[],
+      permissions: ['analytics', 'reports', 'auditLogs', 'permissions', 'modulePermissions'] as (keyof PermissionSet)[],
     },
   ]
 
@@ -315,7 +318,7 @@ export default function PermissionsPage() {
                                     <Switch
                                       checked={editedPermissions?.[permission] || false}
                                       onChange={(e) => handlePermissionChange(permission, e.target.checked)}
-                                      disabled={permission === 'permissions' || isSaving}
+                                      disabled={isSaving}
                                     />
                                   </TableCell>
                                 </TableRow>

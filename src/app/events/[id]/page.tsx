@@ -23,6 +23,19 @@ import {
   Skeleton,
   Stack,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  LinearProgress,
+  Divider,
 } from '@mui/material'
 import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import {
@@ -40,6 +53,9 @@ import {
   MoreVert,
   Email,
   Phone,
+  Visibility,
+  Timeline,
+  Receipt,
 } from '@mui/icons-material'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -78,6 +94,11 @@ export default function EventDetailPage() {
   // Menu state
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
 
+  // Payment history dialog state
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [selectedRegistration, setSelectedRegistration] = useState<any>(null)
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([])
+
   const fetchEvent = async () => {
     try {
       setLoading(true)
@@ -112,13 +133,38 @@ export default function EventDetailPage() {
       })
       // The backend returns { registrations, total, page, limit }
       const registrationsData = response.registrations || []
+
+      console.log('📊 Raw API Response:', response);
+      console.log('📊 First Registration Data:', registrationsData[0]);
+
       // Map service registrations to local type
-      const mappedRegistrations: EventRegistration[] = registrationsData.map((reg: any) => ({
-        ...reg,
-        userId: reg.user || reg.userId,  // Map user to userId
-        amount: reg.amount || reg.paymentAmount || reg.amountPaid,  // Map paymentAmount to amount
-        registeredAt: reg.registeredAt || reg.registrationDate || reg.createdAt,  // Map registrationDate to registeredAt
-      }))
+      const mappedRegistrations: EventRegistration[] = registrationsData.map((reg: any) => {
+        console.log('📊 Mapping registration:', {
+          _id: reg._id,
+          totalPaid: reg.totalPaid,
+          totalAmount: reg.totalAmount,
+          remainingBalance: reg.remainingBalance,
+          paymentMode: reg.paymentMode,
+          amountPaid: reg.amountPaid,
+          amount: reg.amount,
+        });
+
+        return {
+          ...reg,
+          userId: reg.user || reg.userId,  // Map user to userId
+          amount: reg.totalPaid || reg.amount || reg.paymentAmount || reg.amountPaid || 0,  // Support partial payments
+          registeredAt: reg.registeredAt || reg.registrationDate || reg.createdAt,  // Map registrationDate to registeredAt
+          // Add partial payment fields
+          totalAmount: reg.totalAmount,
+          totalPaid: reg.totalPaid,
+          remainingBalance: reg.remainingBalance,
+          isFullyPaid: reg.isFullyPaid,
+          paymentMode: reg.paymentMode,
+        };
+      });
+
+      console.log('📊 Mapped Registrations:', mappedRegistrations);
+
       setRegistrations(mappedRegistrations)
       setTotalRegistrations(response.total || 0)
       
@@ -196,6 +242,30 @@ export default function EventDetailPage() {
 
   const handleMenuClose = () => {
     setAnchorEl(null)
+  }
+
+  const handleViewPaymentHistory = async (registration: any) => {
+    setSelectedRegistration(registration)
+    setPaymentDialogOpen(true)
+
+    // Fetch payment history from API if registration has partial payment
+    if (registration.paymentMode === 'partial' || registration.totalPaid > 0) {
+      try {
+        // Call the event service to get payment history
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/event-registrations/payment-history/${registration._id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          }
+        })
+        const data = await response.json()
+        setPaymentHistory(data.paymentHistory || [])
+      } catch (error) {
+        console.error('Error fetching payment history:', error)
+        setPaymentHistory([])
+      }
+    } else {
+      setPaymentHistory([])
+    }
   }
 
   const columns: GridColDef[] = [
@@ -378,17 +448,63 @@ export default function EventDetailPage() {
     },
     ...(isSuperAdmin ? [{
       field: 'paymentAmount',
-      headerName: 'Monto',
-      flex: 0.5,
-      minWidth: 90,
-      maxWidth: 120,
+      headerName: 'Pago',
+      flex: 0.8,
+      minWidth: 130,
+      maxWidth: 180,
       align: 'right' as const,
       headerAlign: 'right' as const,
-      renderCell: (params: any) => (
-        <Typography variant="body2" fontWeight={600} color="success.main">
-          ${(params.value || params.row.amount || 0).toFixed(2)}
-        </Typography>
-      ),
+      renderCell: (params: any) => {
+        // Get values with fallbacks
+        const totalPaid = params.row.totalPaid ?? params.row.amount ?? params.row.paymentAmount ?? 0;
+        const totalAmount = params.row.totalAmount ?? totalPaid;
+        const remainingBalance = params.row.remainingBalance ?? 0;
+        const isPartial = params.row.paymentMode === 'partial';
+        const isFullyPaid = params.row.isFullyPaid ?? (remainingBalance === 0 && totalPaid > 0);
+
+        // Determine color based on payment status
+        const paymentColor = isFullyPaid
+          ? 'success.main'
+          : totalPaid > 0
+            ? 'warning.main'
+            : 'text.secondary';
+
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'flex-end',
+              height: '100%',
+              width: '100%',
+              gap: 0.5
+            }}
+          >
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              color={paymentColor}
+              sx={{ lineHeight: 1.3 }}
+            >
+              ${totalPaid.toFixed(2)}
+            </Typography>
+            {isPartial && totalAmount > totalPaid && (
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                de ${totalAmount.toFixed(2)}
+              </Typography>
+            )}
+            {isPartial && remainingBalance > 0 && (
+              <Typography variant="caption" color="warning.main" sx={{ lineHeight: 1.2, fontWeight: 600 }}>
+                Resta: ${remainingBalance.toFixed(2)}
+              </Typography>
+            )}
+            {isFullyPaid && isPartial && (
+              <Chip label="Completo" size="small" color="success" sx={{ height: 18, fontSize: '0.65rem' }} />
+            )}
+          </Box>
+        );
+      },
     }] : []),
     {
       field: 'paymentStatus',
@@ -473,6 +589,30 @@ export default function EventDetailPage() {
           <Cancel color="disabled" />
         )
       ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Acciones',
+      flex: 0.5,
+      minWidth: 100,
+      maxWidth: 120,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const hasPartialPayment = params.row.paymentMode === 'partial' || (params.row.totalPaid ?? 0) > 0;
+
+        return (
+          <Button
+            size="small"
+            startIcon={<Timeline />}
+            onClick={() => handleViewPaymentHistory(params.row)}
+            disabled={!hasPartialPayment}
+            sx={{ fontSize: '0.75rem', py: 0.5, px: 1 }}
+          >
+            Pagos
+          </Button>
+        );
+      },
     },
   ]
 
@@ -901,6 +1041,121 @@ export default function EventDetailPage() {
         </CardContent>
       </Card>
       </Container>
+
+      {/* Payment History Dialog */}
+      <Dialog
+        open={paymentDialogOpen}
+        onClose={() => setPaymentDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Receipt color="primary" />
+            <Box>
+              <Typography variant="h6">Historial de Pagos</Typography>
+              {selectedRegistration && (
+                <Typography variant="caption" color="text.secondary">
+                  {selectedRegistration.firstName} {selectedRegistration.lastName} ({selectedRegistration.email})
+                </Typography>
+              )}
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          {selectedRegistration && (
+            <>
+              {/* Payment Summary */}
+              <Card sx={{ mb: 3, bgcolor: 'background.default' }}>
+                <CardContent>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Resumen de Pagos
+                  </Typography>
+
+                  {/* Progress Bar */}
+                  <Box sx={{ my: 2 }}>
+                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
+                      <Typography variant="caption">Progreso</Typography>
+                      <Typography variant="caption" fontWeight={600}>
+                        {((selectedRegistration.totalPaid ?? 0) / (selectedRegistration.totalAmount ?? 1) * 100).toFixed(0)}%
+                      </Typography>
+                    </Stack>
+                    <LinearProgress
+                      variant="determinate"
+                      value={((selectedRegistration.totalPaid ?? 0) / (selectedRegistration.totalAmount ?? 1)) * 100}
+                      sx={{ height: 8, borderRadius: 4 }}
+                    />
+                  </Box>
+
+                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid item xs={4}>
+                      <Typography variant="caption" color="text.secondary">Total</Typography>
+                      <Typography variant="h6">${(selectedRegistration.totalAmount ?? 0).toFixed(2)}</Typography>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Typography variant="caption" color="text.secondary">Pagado</Typography>
+                      <Typography variant="h6" color="success.main">${(selectedRegistration.totalPaid ?? 0).toFixed(2)}</Typography>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Typography variant="caption" color="text.secondary">Resta</Typography>
+                      <Typography variant="h6" color="warning.main">${(selectedRegistration.remainingBalance ?? 0).toFixed(2)}</Typography>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              {/* Payment History Table */}
+              {paymentHistory.length > 0 ? (
+                <TableContainer component={Paper}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Fecha</TableCell>
+                        <TableCell>Descripción</TableCell>
+                        <TableCell align="right">Monto</TableCell>
+                        <TableCell align="center">Estado</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {paymentHistory.map((payment: any) => (
+                        <TableRow key={payment.paymentId}>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {payment.processedAt
+                                ? format(new Date(payment.processedAt), 'dd MMM yyyy HH:mm', { locale: es })
+                                : 'Pendiente'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">{payment.description || payment.type}</Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" fontWeight={600}>
+                              ${payment.amount.toFixed(2)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={payment.status === 'completed' ? 'Completado' : payment.status === 'pending' ? 'Pendiente' : 'Fallido'}
+                              color={payment.status === 'completed' ? 'success' : payment.status === 'pending' ? 'warning' : 'error'}
+                              size="small"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Alert severity="info">No hay historial de pagos disponible</Alert>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPaymentDialogOpen(false)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
     </AdminLayout>
   )
 }
