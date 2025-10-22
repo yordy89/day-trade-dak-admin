@@ -18,6 +18,7 @@ import { BrandingSettings } from '@/components/settings/branding-settings'
 import { NotificationEmails } from '@/components/settings/notification-emails'
 import { TradingSettings } from '@/components/settings/trading-settings'
 import { SystemMaintenance } from '@/components/settings/system-maintenance'
+import { FeatureSettings } from '@/components/settings/feature-settings'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -65,6 +66,7 @@ export default function SettingsPage() {
         SettingCategory.CONTACT,
         SettingCategory.FOOTER,
         SettingCategory.BRANDING,
+        SettingCategory.FEATURES,
         SettingCategory.NOTIFICATIONS,
         SettingCategory.TRADING,
         'MAINTENANCE', // Special case for maintenance tab
@@ -203,6 +205,12 @@ export default function SettingsPage() {
       onChange={handleSettingsChange}
       onSave={handleSaveAll}
     />,
+    <FeatureSettings
+      key="features"
+      settings={settings || []}
+      onChange={handleSettingsChange}
+      onSave={handleSaveAll}
+    />,
     <NotificationEmails key="notifications" />,
     <TradingSettings
       key="trading"
@@ -254,9 +262,10 @@ export default function SettingsPage() {
             <Tab label="Contact" {...a11yProps(2)} />
             <Tab label="Footer" {...a11yProps(3)} />
             <Tab label="Branding" {...a11yProps(4)} />
-            <Tab label="Notifications" {...a11yProps(5)} />
-            <Tab label="Trading" {...a11yProps(6)} />
-            <Tab label="Maintenance" {...a11yProps(7)} />
+            <Tab label="Features" {...a11yProps(5)} />
+            <Tab label="Notifications" {...a11yProps(6)} />
+            <Tab label="Trading" {...a11yProps(7)} />
+            <Tab label="Maintenance" {...a11yProps(8)} />
           </Tabs>
         </Box>
 
