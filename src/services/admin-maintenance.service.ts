@@ -14,7 +14,7 @@ export interface ExpiredSubscriptionPreview {
     userEmail: string
     userName?: string
     subscription: {
-      plan: string
+      plan?: string
       expiresAt: Date | null
       currentPeriodEnd: Date | null
       daysExpired: number

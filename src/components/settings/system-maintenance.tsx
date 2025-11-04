@@ -499,7 +499,7 @@ export function SystemMaintenance() {
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={item.subscription.plan.replace(/([A-Z])/g, ' $1').trim()}
+                          label={item.subscription.plan ? item.subscription.plan.replace(/([A-Z])/g, ' $1').trim() : 'Unknown Plan'}
                           size="small"
                           variant="outlined"
                         />
@@ -553,8 +553,8 @@ export function SystemMaintenance() {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleCleanupSingle(item.userId, item.subscription.plan, item.userEmail)}
-                            disabled={cleaningUserId === item.userId}
+                            onClick={() => handleCleanupSingle(item.userId, item.subscription.plan || 'unknown', item.userEmail)}
+                            disabled={cleaningUserId === item.userId || !item.subscription.plan}
                           >
                             {cleaningUserId === item.userId ? (
                               <CircularProgress size={20} />
