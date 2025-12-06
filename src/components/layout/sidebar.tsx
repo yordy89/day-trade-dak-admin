@@ -37,6 +37,7 @@ import {
   LocalOffer,
   AccountBalance,
   MailOutline,
+  MenuBook,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/store/auth-store'
 import { usePermissionStore } from '@/store/permission-store'
@@ -64,6 +65,7 @@ const navigation: NavigationItem[] = [
   { name: 'contact_messages', href: '/contact-messages', icon: Email, permission: 'messages' },
   { name: 'content', href: '/content', icon: ContentPaste, permission: 'content' },
   { name: 'announcements', href: '/announcements', icon: Campaign, permission: 'announcements' },
+  { name: 'trading_journal', href: '/trading-journal', icon: MenuBook, permission: 'tradingJournal' },
   { name: 'analytics', href: '/analytics', icon: BarChart, permission: 'analytics' },
   { name: 'transactions', href: '/transactions', icon: AttachMoney, permission: 'transactions' },
   { name: 'reports', href: '/reports', icon: ContentPaste, permission: 'reports' },

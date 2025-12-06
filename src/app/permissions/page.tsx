@@ -77,6 +77,7 @@ export default function PermissionsPage() {
     permissions: t('permissions:permissions.permissions'),
     contactMessages: t('permissions:permissions.contactMessages'),
     modulePermissions: t('permissions:permissions.modulePermissions'),
+    tradingJournal: t('permissions:permissions.tradingJournal'),
   }
 
   const permissionGroups = [
@@ -90,7 +91,7 @@ export default function PermissionsPage() {
     },
     {
       title: t('permissions:groups.education'),
-      permissions: ['content', 'courses', 'meetings', 'events'] as (keyof PermissionSet)[],
+      permissions: ['content', 'courses', 'meetings', 'events', 'tradingJournal'] as (keyof PermissionSet)[],
     },
     {
       title: t('permissions:groups.communication'),

@@ -19,6 +19,7 @@ import { NotificationEmails } from '@/components/settings/notification-emails'
 import { TradingSettings } from '@/components/settings/trading-settings'
 import { SystemMaintenance } from '@/components/settings/system-maintenance'
 import { FeatureSettings } from '@/components/settings/feature-settings'
+import { TradingJournalSettings } from '@/components/settings/trading-journal-settings'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -69,10 +70,11 @@ export default function SettingsPage() {
         SettingCategory.FEATURES,
         SettingCategory.NOTIFICATIONS,
         SettingCategory.TRADING,
+        'TRADING_JOURNAL', // Special case for trading journal tab
         'MAINTENANCE', // Special case for maintenance tab
       ]
-      // Don't fetch settings for maintenance tab
-      if (categories[activeTab] === 'MAINTENANCE') {
+      // Don't fetch settings for special tabs
+      if (categories[activeTab] === 'MAINTENANCE' || categories[activeTab] === 'TRADING_JOURNAL') {
         return []
       }
       return settingsService.getSettingsByCategory(categories[activeTab] as SettingCategory)
@@ -218,6 +220,7 @@ export default function SettingsPage() {
       onSave={handleSaveAll}
       loading={bulkUpdateMutation.isPending}
     />,
+    <TradingJournalSettings key="trading-journal" />,
     <SystemMaintenance key="maintenance" />,
   ]
 
@@ -265,7 +268,8 @@ export default function SettingsPage() {
             <Tab label="Features" {...a11yProps(5)} />
             <Tab label="Notifications" {...a11yProps(6)} />
             <Tab label="Trading" {...a11yProps(7)} />
-            <Tab label="Maintenance" {...a11yProps(8)} />
+            <Tab label="Trading Journal" {...a11yProps(8)} />
+            <Tab label="Maintenance" {...a11yProps(9)} />
           </Tabs>
         </Box>
 

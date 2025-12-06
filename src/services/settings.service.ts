@@ -8,57 +8,70 @@ class SettingsService {
     page?: number
     limit?: number
   }) {
-    const response = await apiClient.get('/admin/settings', { params })
+    const response = await apiClient.get('/settings', { params })
     return response.data
   }
 
   async getSettingsByCategory(category: SettingCategory): Promise<ISetting[]> {
-    const response = await apiClient.get(`/admin/settings/category/${category}`)
+    const response = await apiClient.get(`/settings/category/${category}`)
     return response.data
   }
 
   async getCategories() {
-    const response = await apiClient.get('/admin/settings/categories')
+    const response = await apiClient.get('/settings/categories')
     return response.data
   }
 
   async getSettingByKey(key: string): Promise<ISetting> {
-    const response = await apiClient.get(`/admin/settings/${key}`)
+    const response = await apiClient.get(`/settings/${key}`)
     return response.data
   }
 
   async createSetting(data: Partial<ISetting>): Promise<ISetting> {
-    const response = await apiClient.post('/admin/settings', data)
+    const response = await apiClient.post('/settings', data)
     return response.data
   }
 
   async updateSetting(key: string, data: Partial<ISetting>): Promise<ISetting> {
-    const response = await apiClient.patch(`/admin/settings/${key}`, data)
+    const response = await apiClient.patch(`/settings/${key}`, data)
+    return response.data
+  }
+
+  async updateSettingValue(key: string, value: any, lastModifiedBy?: string): Promise<ISetting> {
+    const response = await apiClient.patch(`/settings/${key}/value`, {
+      value,
+      lastModifiedBy
+    })
+    return response.data
+  }
+
+  async getValue(key: string): Promise<any> {
+    const response = await apiClient.get(`/settings/${key}/value`)
     return response.data
   }
 
   async bulkUpdateSettings(data: BulkUpdateSettingsDto) {
-    const response = await apiClient.post('/admin/settings/bulk-update', data)
+    const response = await apiClient.post('/settings/bulk-update', data)
     return response.data
   }
 
   async deleteSetting(key: string) {
-    const response = await apiClient.delete(`/admin/settings/${key}`)
+    const response = await apiClient.delete(`/settings/${key}`)
     return response.data
   }
 
   async resetDefaults() {
-    const response = await apiClient.post('/admin/settings/reset-defaults')
+    const response = await apiClient.post('/settings/reset-defaults')
     return response.data
   }
 
   async exportSettings() {
-    const response = await apiClient.get('/admin/settings/export/all')
+    const response = await apiClient.get('/settings/export/all')
     return response.data
   }
 
   async importSettings(settings: any[]) {
-    const response = await apiClient.post('/admin/settings/import', settings)
+    const response = await apiClient.post('/settings/import', settings)
     return response.data
   }
 }

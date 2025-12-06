@@ -171,6 +171,17 @@ class EventService {
     const response = await apiClient.patch(`/admin/events/${eventId}/set-featured`);
     return response.data.event;
   }
+
+  async getEventParticipants(eventId: string): Promise<any[]> {
+    const response = await this.getEventRegistrations(eventId, { limit: 1000 });
+    return response.registrations.map((reg) => ({
+      userId: reg.user?._id,
+      email: reg.email || reg.user?.email,
+      firstName: reg.firstName || reg.user?.firstName,
+      lastName: reg.lastName || reg.user?.lastName,
+      isRegistered: !!reg.user,
+    }));
+  }
 }
 
 export const eventService = new EventService();

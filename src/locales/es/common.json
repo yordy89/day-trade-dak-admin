@@ -24,7 +24,8 @@
     "email_marketing": "Marketing por Email",
     "audit_logs": "Registros de Auditoría",
     "permissions": "Permisos",
-    "module_permissions": "Permisos de Módulos"
+    "module_permissions": "Permisos de Módulos",
+    "trading_journal": "Diario de Trading"
   },
   "actions": {
     "save": "Guardar",

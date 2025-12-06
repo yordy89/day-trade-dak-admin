@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material'
 import { ReactNode } from 'react'
 
 interface PageHeaderProps {
-  title: string
+  title: ReactNode
   subtitle?: string
   action?: ReactNode
 }
@@ -18,9 +18,13 @@ export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
       }}
     >
       <Box>
-        <Typography variant="h4" fontWeight={600} gutterBottom>
-          {title}
-        </Typography>
+        {typeof title === 'string' ? (
+          <Typography variant="h4" fontWeight={600} gutterBottom>
+            {title}
+          </Typography>
+        ) : (
+          title
+        )}
         {subtitle && (
           <Typography variant="body1" color="text.secondary">
             {subtitle}

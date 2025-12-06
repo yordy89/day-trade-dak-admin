@@ -9,6 +9,7 @@ export enum ModuleType {
   VIP_EVENTS = 'vipEvents',
   MASTER_COURSE = 'masterCourse',
   STOCKS = 'stocks',
+  TRADING_JOURNAL = 'tradingJournal',
 }
 
 export interface ModulePermission {
@@ -27,6 +28,8 @@ export interface ModulePermission {
   isActive: boolean
   fromSubscription: boolean
   subscriptionId?: string
+  eventId?: string
+  eventName?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -71,4 +74,5 @@ export const MODULE_DISPLAY_NAMES: Record<ModuleType, { es: string; en: string }
   [ModuleType.VIP_EVENTS]: { es: 'Eventos VIP', en: 'VIP Events' },
   [ModuleType.MASTER_COURSE]: { es: 'Master Course', en: 'Master Course' },
   [ModuleType.STOCKS]: { es: 'Acciones', en: 'Stocks' },
+  [ModuleType.TRADING_JOURNAL]: { es: 'Diario de Trading', en: 'Trading Journal' },
 }

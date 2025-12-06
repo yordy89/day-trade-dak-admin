@@ -20,6 +20,7 @@ export interface PermissionSet {
   permissions?: boolean // Only visible for super_admin
   contactMessages: boolean
   modulePermissions: boolean // Permisos de Módulos
+  tradingJournal: boolean // Trading Journal
 }
 
 export interface AdminUserWithPermissions {
@@ -54,6 +55,7 @@ export interface UpdatePermissionsRequest {
   permissions?: boolean
   contactMessages?: boolean
   modulePermissions?: boolean
+  tradingJournal?: boolean
 }
 
 export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
@@ -78,6 +80,7 @@ export const DEFAULT_ADMIN_PERMISSIONS: PermissionSet = {
   permissions: false,
   contactMessages: true,
   modulePermissions: false, // Admins don't get module permissions by default
+  tradingJournal: false, // Admins don't get trading journal by default
 }
 
 export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
@@ -102,4 +105,5 @@ export const SUPER_ADMIN_PERMISSIONS: PermissionSet = {
   permissions: true,
   contactMessages: true,
   modulePermissions: true, // Super admins have module permissions
+  tradingJournal: true, // Super admins have trading journal access
 }

@@ -24,7 +24,8 @@
     "email_marketing": "Email Marketing",
     "audit_logs": "Audit Logs",
     "permissions": "Permissions",
-    "module_permissions": "Module Permissions"
+    "module_permissions": "Module Permissions",
+    "trading_journal": "Trading Journal"
   },
   "actions": {
     "save": "Save",
