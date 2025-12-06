@@ -6,6 +6,33 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Safely parse a date string without timezone conversion issues.
+ * This ensures dates like "2025-12-15" or "2025-12-15T00:00:00.000Z"
+ * are always displayed as December 15, regardless of the user's timezone.
+ *
+ * The issue: When dates are stored as ISO strings in UTC (e.g., "2025-12-15T00:00:00.000Z"),
+ * and displayed in a timezone west of UTC (like New York at UTC-5), JavaScript's Date constructor
+ * interprets the UTC time and converts it to local time, causing dates to "shift back" by a day.
+ *
+ * @param dateStr - ISO date string, date-only string, or Date object
+ * @returns Date object set to noon on the specified date (to avoid edge cases)
+ */
+export function parseDateSafe(dateStr: string | Date | null | undefined): Date {
+  if (!dateStr) return new Date()
+
+  // If it's already a Date object, convert to ISO string first
+  const dateString = dateStr instanceof Date ? dateStr.toISOString() : dateStr
+
+  // Extract just the date part (YYYY-MM-DD)
+  const dateOnly = dateString.split('T')[0]
+
+  // Parse as local date by appending time as noon to avoid timezone edge cases
+  // Using noon (12:00) ensures the date won't flip to the previous/next day
+  // regardless of the user's timezone
+  return new Date(dateOnly + 'T12:00:00')
+}
+
 export function formatCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

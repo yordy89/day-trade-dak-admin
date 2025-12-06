@@ -43,6 +43,7 @@ import {
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { eventService } from '@/services/event.service'
+import { parseDateSafe } from '@/lib/utils'
 import { useSnackbar } from '@/hooks/use-snackbar'
 import type { Event } from '@/types/event'
 import { ConfirmDialog } from '@/components/dialogs/confirm-dialog'
@@ -302,7 +303,7 @@ export default function EventsPage() {
       align: 'left',
       headerAlign: 'left',
       renderCell: (params) => {
-        const eventDate = new Date(params.value)
+        const eventDate = parseDateSafe(params.value)
         return (
           <Box display="flex" alignItems="center" gap={0.5} height="100%">
             <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
@@ -357,12 +358,12 @@ export default function EventsPage() {
       headerAlign: 'center',
       renderCell: (params) => {
         const event = params.row
-        const eventDate = new Date(event.date)
+        const eventDate = parseDateSafe(event.date)
         const now = new Date()
-        
+
         let status = 'Activo'
         let color: 'success' | 'default' | 'info' = 'success'
-        
+
         // Check event status based on backend data
         if (event.status === 'draft' || event.isActive === false) {
           status = 'Borrador'
@@ -472,7 +473,7 @@ export default function EventsPage() {
                   </Typography>
                   <Typography variant="h4" fontWeight={600}>
                     {loading ? <Skeleton width={60} /> : events?.filter(e => {
-                      const eventDate = new Date(e.date)
+                      const eventDate = parseDateSafe(e.date)
                       const now = new Date()
                       return e.isActive !== false && eventDate >= now
                     }).length || 0}
@@ -521,7 +522,7 @@ export default function EventsPage() {
                   </Typography>
                   <Typography variant="body1" fontWeight={500}>
                     {loading ? <Skeleton width={100} /> : (() => {
-                      const upcomingEvents = events?.filter(e => new Date(e.date) > new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                      const upcomingEvents = events?.filter(e => parseDateSafe(e.date) > new Date()).sort((a, b) => parseDateSafe(a.date).getTime() - parseDateSafe(b.date).getTime());
                       return upcomingEvents?.[0]?.name || upcomingEvents?.[0]?.title || 'N/A';
                     })()}
                   </Typography>
