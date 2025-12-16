@@ -89,6 +89,49 @@ export class ModulePermissionService {
     const response = await api.post('/admin/module-permissions/grant-event-permissions', data)
     return response.data
   }
+
+  async bulkRevoke(data: {
+    userIds: string[]
+    moduleTypes: string[]
+    reason?: string
+  }): Promise<{
+    revoked: number
+    usersAffected: number
+    affectedUsers: Array<{
+      userId: string
+      email: string
+      modulesRevoked: string[]
+    }>
+    errors: Array<{
+      userId: string
+      error: string
+    }>
+  }> {
+    const response = await api.post('/admin/module-permissions/bulk-revoke', data)
+    return response.data
+  }
+
+  async revokeEventPermissions(data: {
+    userIds: string[]
+    moduleTypes: string[]
+    eventId?: string
+    reason?: string
+  }): Promise<{
+    permissionsRevoked: number
+    usersAffected: number
+    affectedUsers: Array<{
+      userId: string
+      email: string
+      modulesRevoked: string[]
+    }>
+    errors: Array<{
+      userId: string
+      error: string
+    }>
+  }> {
+    const response = await api.post('/admin/module-permissions/revoke-event-permissions', data)
+    return response.data
+  }
 }
 
 // Export singleton instance

@@ -53,7 +53,7 @@ import {
   ListItemIcon,
   Divider,
 } from '@mui/material';
-import { Close, ContentCopy, CheckCircleOutline, Warning } from '@mui/icons-material';
+import { Close, ContentCopy, CheckCircleOutline, Warning, RemoveCircle } from '@mui/icons-material';
 
 interface EventData {
   _id: string;
@@ -79,6 +79,10 @@ interface EventRegistration {
   createdAt: string;
 }
 
+interface UserPermissions {
+  [userId: string]: ModuleType[];
+}
+
 interface CreatedUser {
   email: string;
   firstName: string;
@@ -101,6 +105,20 @@ interface PermissionResultData {
   errors: ResultError[];
 }
 
+interface RevokeResultData {
+  permissionsRevoked: number;
+  usersAffected: number;
+  affectedUsers: Array<{
+    userId: string;
+    email: string;
+    modulesRevoked: string[];
+  }>;
+  errors: Array<{
+    userId: string;
+    error: string;
+  }>;
+}
+
 export function EventModulePermissions() {
   const [events, setEvents] = useState<EventData[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
@@ -114,6 +132,20 @@ export function EventModulePermissions() {
     open: boolean;
     data: PermissionResultData | null;
   }>({ open: false, data: null });
+
+  // Revoke functionality state
+  const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
+  const [selectAllChecked, setSelectAllChecked] = useState(false);
+  const [revokeModules, setRevokeModules] = useState<ModuleType[]>([]);
+  const [revoking, setRevoking] = useState(false);
+  const [confirmRevokeDialog, setConfirmRevokeDialog] = useState(false);
+  const [revokeResultDialog, setRevokeResultDialog] = useState<{
+    open: boolean;
+    data: RevokeResultData | null;
+  }>({ open: false, data: null });
+  const [userPermissions, setUserPermissions] = useState<UserPermissions>({});
+  const [loadingPermissions, setLoadingPermissions] = useState(false);
+
   const { showSuccess, showError } = useSnackbar();
 
   useEffect(() => {
@@ -148,12 +180,59 @@ export function EventModulePermissions() {
     try {
       setLoading(true);
       const response = await eventService.getEventRegistrations(eventId);
-      setRegistrations(response.registrations || []);
+      const regs = response.registrations || [];
+      setRegistrations(regs);
+
+      // Fetch permissions for each registered user
+      if (regs.length > 0) {
+        fetchUserPermissions(regs);
+      }
     } catch (error) {
       showError('Error al cargar registros del evento');
       setRegistrations([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserPermissions = async (regs: EventRegistration[]) => {
+    try {
+      setLoadingPermissions(true);
+      const permissionsMap: UserPermissions = {};
+
+      // Fetch permissions for each user in parallel
+      // Only include registrations with a linked user account (user._id is not null)
+      const userIds = regs
+        .filter(r => r.user?._id)
+        .map(r => r.user._id);
+
+      const uniqueUserIds = [...new Set(userIds)];
+
+      await Promise.all(
+        uniqueUserIds.map(async (userId) => {
+          try {
+            const permissions = await modulePermissionService.getUserPermissions(userId);
+
+            // Only show admin/event-granted permissions (not from subscriptions)
+            // These are the ones that can be revoked via this interface
+            // Filter by: no subscriptionId (subscription permissions have this set)
+            const activeModules = permissions
+              .filter(p => p.hasAccess && p.isActive && !p.subscriptionId)
+              .map(p => p.moduleType as ModuleType);
+
+            permissionsMap[userId] = activeModules;
+          } catch (error) {
+            // User might not have any permissions
+            permissionsMap[userId] = [];
+          }
+        })
+      );
+
+      setUserPermissions(permissionsMap);
+    } catch (error) {
+      console.error('Error fetching user permissions:', error);
+    } finally {
+      setLoadingPermissions(false);
     }
   };
 
@@ -206,6 +285,11 @@ export function EventModulePermissions() {
       setSelectedModules([]);
       setExpiresAt(null);
       setReason('');
+
+      // Refresh permissions to show updated state
+      if (registrations.length > 0) {
+        fetchUserPermissions(registrations);
+      }
     } catch (error: any) {
       showError(error.message || 'Error al otorgar permisos');
     } finally {
@@ -219,6 +303,89 @@ export function EventModulePermissions() {
         ? prev.filter(m => m !== moduleType)
         : [...prev, moduleType]
     );
+  };
+
+  // Revoke functionality handlers
+  const handleSelectParticipant = (userId: string) => {
+    setSelectedParticipants(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      // Update selectAllChecked based on selection
+      const registeredUserIds = registrations
+        .filter(r => r.user?._id)
+        .map(r => r.user._id);
+      setSelectAllChecked(registeredUserIds.every(id => newSet.has(id)));
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectAllChecked) {
+      setSelectedParticipants(new Set());
+      setSelectAllChecked(false);
+    } else {
+      const registeredUserIds = registrations
+        .filter(r => r.user?._id)
+        .map(r => r.user._id);
+      setSelectedParticipants(new Set(registeredUserIds));
+      setSelectAllChecked(true);
+    }
+  };
+
+  const toggleRevokeModule = (moduleType: ModuleType) => {
+    setRevokeModules(prev =>
+      prev.includes(moduleType)
+        ? prev.filter(m => m !== moduleType)
+        : [...prev, moduleType]
+    );
+  };
+
+  const handleRevokePermissions = async () => {
+    if (selectedParticipants.size === 0 || revokeModules.length === 0) {
+      showError('Por favor selecciona usuarios y al menos un módulo para revocar');
+      return;
+    }
+
+    try {
+      setRevoking(true);
+      setConfirmRevokeDialog(false);
+
+      const result = await modulePermissionService.revokeEventPermissions({
+        userIds: Array.from(selectedParticipants),
+        moduleTypes: revokeModules,
+        eventId: selectedEvent?._id,
+        reason: `Revocación por evento: ${selectedEvent?.title}`,
+      });
+
+      // Show results dialog
+      setRevokeResultDialog({
+        open: true,
+        data: result,
+      });
+
+      // Show success message
+      showSuccess(
+        `✅ Revocación completada: ${result.permissionsRevoked} permisos revocados de ${result.usersAffected} usuarios`
+      );
+
+      // Reset revoke state
+      setSelectedParticipants(new Set());
+      setSelectAllChecked(false);
+      setRevokeModules([]);
+
+      // Refresh permissions to show updated state
+      if (registrations.length > 0) {
+        fetchUserPermissions(registrations);
+      }
+    } catch (error: any) {
+      showError(error.message || 'Error al revocar permisos');
+    } finally {
+      setRevoking(false);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -500,23 +667,51 @@ export function EventModulePermissions() {
             {registrations.length > 0 && (
               <Card>
                 <CardContent>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Participantes ({registrations.length})
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined" sx={{ mt: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="subtitle1">
+                      Participantes ({registrations.length})
+                      {selectedParticipants.size > 0 && (
+                        <Chip
+                          label={`${selectedParticipants.size} seleccionados`}
+                          size="small"
+                          color="primary"
+                          sx={{ ml: 1 }}
+                        />
+                      )}
+                    </Typography>
+                  </Box>
+                  <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
                       <TableHead>
                         <TableRow>
+                          <TableCell padding="checkbox">
+                            <Checkbox
+                              checked={selectAllChecked}
+                              indeterminate={selectedParticipants.size > 0 && !selectAllChecked}
+                              onChange={handleSelectAll}
+                            />
+                          </TableCell>
                           <TableCell>Usuario</TableCell>
                           <TableCell>Email</TableCell>
                           <TableCell>Tipo de Ticket</TableCell>
+                          <TableCell>Permisos Actuales</TableCell>
                           <TableCell>Estado</TableCell>
                           <TableCell>Fecha de Registro</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {registrations.map((registration) => (
-                          <TableRow key={registration._id}>
+                          <TableRow
+                            key={registration._id}
+                            selected={selectedParticipants.has(registration.user?._id)}
+                          >
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                checked={selectedParticipants.has(registration.user?._id)}
+                                onChange={() => registration.user?._id && handleSelectParticipant(registration.user._id)}
+                                disabled={!registration.user?._id}
+                              />
+                            </TableCell>
                             <TableCell>
                               <Stack direction="row" spacing={1} alignItems="center">
                                 <Avatar sx={{ width: 32, height: 32 }}>
@@ -540,6 +735,28 @@ export function EventModulePermissions() {
                               />
                             </TableCell>
                             <TableCell>
+                              {loadingPermissions ? (
+                                <CircularProgress size={16} />
+                              ) : registration.user?._id && userPermissions[registration.user._id]?.length > 0 ? (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
+                                  {userPermissions[registration.user._id].map((module) => (
+                                    <Chip
+                                      key={module}
+                                      label={MODULE_DISPLAY_NAMES[module]?.es?.substring(0, 10) || module.substring(0, 10)}
+                                      size="small"
+                                      color="success"
+                                      variant="outlined"
+                                      sx={{ fontSize: '0.65rem', height: 20 }}
+                                    />
+                                  ))}
+                                </Box>
+                              ) : (
+                                <Typography variant="caption" color="text.secondary">
+                                  Sin permisos
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <Chip
                                 label={registration.status}
                                 size="small"
@@ -560,8 +777,50 @@ export function EventModulePermissions() {
               </Card>
             )}
 
-            {/* Action Button */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            {/* Revoke Module Selection - Only visible when participants are selected */}
+            {selectedParticipants.size > 0 && (
+              <Card sx={{ borderColor: 'error.main', borderWidth: 2, borderStyle: 'solid' }}>
+                <CardContent>
+                  <Typography variant="subtitle1" color="error" gutterBottom>
+                    <RemoveCircle sx={{ verticalAlign: 'middle', mr: 1 }} />
+                    Seleccionar Módulos a Revocar
+                  </Typography>
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    Se revocarán los permisos de los módulos seleccionados de los {selectedParticipants.size} usuario(s) marcados.
+                  </Alert>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                    {Object.values(ModuleType).map((moduleType) => (
+                      <FormControlLabel
+                        key={`revoke-${moduleType}`}
+                        control={
+                          <Checkbox
+                            checked={revokeModules.includes(moduleType)}
+                            onChange={() => toggleRevokeModule(moduleType)}
+                            color="error"
+                          />
+                        }
+                        label={MODULE_DISPLAY_NAMES[moduleType]?.es || moduleType}
+                      />
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Action Buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+              {selectedParticipants.size > 0 && revokeModules.length > 0 && (
+                <LoadingButton
+                  variant="contained"
+                  size="large"
+                  color="error"
+                  onClick={() => setConfirmRevokeDialog(true)}
+                  loading={revoking}
+                  startIcon={<RemoveCircle />}
+                >
+                  Revocar de {selectedParticipants.size} Usuario(s)
+                </LoadingButton>
+              )}
               <LoadingButton
                 variant="contained"
                 size="large"
@@ -585,6 +844,172 @@ export function EventModulePermissions() {
 
         {/* Result Dialog */}
         <ResultDialog />
+
+        {/* Confirm Revoke Dialog */}
+        <Dialog
+          open={confirmRevokeDialog}
+          onClose={() => setConfirmRevokeDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Warning color="error" />
+              <Typography variant="h6">Confirmar Revocación de Permisos</Typography>
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Esta acción revocará los permisos de los módulos seleccionados. Los usuarios perderán acceso inmediatamente.
+            </Alert>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Estás a punto de revocar los siguientes permisos:
+            </Typography>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Usuarios afectados: <strong>{selectedParticipants.size}</strong>
+              </Typography>
+              <Typography variant="subtitle2" color="text.secondary">
+                Módulos a revocar:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                {revokeModules.map((module) => (
+                  <Chip
+                    key={module}
+                    label={MODULE_DISPLAY_NAMES[module]?.es || module}
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmRevokeDialog(false)}>
+              Cancelar
+            </Button>
+            <LoadingButton
+              onClick={handleRevokePermissions}
+              loading={revoking}
+              color="error"
+              variant="contained"
+            >
+              Sí, Revocar Permisos
+            </LoadingButton>
+          </DialogActions>
+        </Dialog>
+
+        {/* Revoke Result Dialog */}
+        <Dialog
+          open={revokeResultDialog.open}
+          onClose={() => setRevokeResultDialog({ open: false, data: null })}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6">
+                Resultado de Revocación de Permisos
+              </Typography>
+              <IconButton
+                onClick={() => setRevokeResultDialog({ open: false, data: null })}
+                size="small"
+              >
+                <Close />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            {revokeResultDialog.data && (
+              <Stack spacing={3}>
+                {/* Summary Stats */}
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Card variant="outlined" sx={{ flex: 1, minWidth: 150 }}>
+                    <CardContent>
+                      <Typography variant="h4" color="error">
+                        {revokeResultDialog.data.permissionsRevoked}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Permisos Revocados
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                  <Card variant="outlined" sx={{ flex: 1, minWidth: 150 }}>
+                    <CardContent>
+                      <Typography variant="h4" color="warning.main">
+                        {revokeResultDialog.data.usersAffected}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Usuarios Afectados
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Box>
+
+                {/* Affected Users List */}
+                {revokeResultDialog.data.affectedUsers && revokeResultDialog.data.affectedUsers.length > 0 && (
+                  <Box>
+                    <Typography variant="subtitle1" gutterBottom>
+                      <RemoveCircle sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1, color: 'error.main' }} />
+                      Usuarios con Permisos Revocados
+                    </Typography>
+                    <List dense>
+                      {revokeResultDialog.data.affectedUsers.map((user, index) => (
+                        <React.Fragment key={user.userId}>
+                          <ListItem>
+                            <ListItemText
+                              primary={user.email}
+                              secondary={
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                  {user.modulesRevoked.map((module) => (
+                                    <Chip
+                                      key={module}
+                                      label={MODULE_DISPLAY_NAMES[module as ModuleType]?.es || module}
+                                      size="small"
+                                      color="error"
+                                      variant="outlined"
+                                    />
+                                  ))}
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                          {index < revokeResultDialog.data!.affectedUsers.length - 1 && <Divider />}
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  </Box>
+                )}
+
+                {/* Errors */}
+                {revokeResultDialog.data.errors && revokeResultDialog.data.errors.length > 0 && (
+                  <Box>
+                    <Typography variant="subtitle1" gutterBottom color="error">
+                      <Warning sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
+                      Errores Encontrados
+                    </Typography>
+                    <List dense>
+                      {revokeResultDialog.data.errors.map((error, index) => (
+                        <ListItem key={index}>
+                          <ListItemText
+                            primary={error.userId}
+                            secondary={error.error}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                )}
+              </Stack>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setRevokeResultDialog({ open: false, data: null })}>
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Stack>
     </Box>
   );
