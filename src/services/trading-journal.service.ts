@@ -124,8 +124,7 @@ export class TradingJournalService {
    */
   async exportStudentTrades(
     studentId: string,
-    filters: FilterTradesDto = {},
-    format: 'csv' | 'excel' = 'csv'
+    filters: FilterTradesDto = {}
   ): Promise<Blob> {
     const params = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
@@ -137,7 +136,6 @@ export class TradingJournalService {
         }
       }
     })
-    params.append('format', format)
 
     const response = await api.get(
       `${this.baseUrl}/admin/student/${studentId}/export?${params.toString()}`,

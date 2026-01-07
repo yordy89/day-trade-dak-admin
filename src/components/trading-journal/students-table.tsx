@@ -29,15 +29,18 @@ import {
   TrendingDown,
   Warning,
 } from '@mui/icons-material'
+import { useTranslation } from 'react-i18next'
 import { StudentWithJournal } from '@/types/trading-journal'
 import { format } from 'date-fns'
 
 interface StudentsTableProps {
   students: StudentWithJournal[]
   loading?: boolean
+  eventId?: string
 }
 
-export function StudentsTable({ students, loading }: StudentsTableProps) {
+export function StudentsTable({ students, loading, eventId }: StudentsTableProps) {
+  const { t } = useTranslation('trading-journal')
   const router = useRouter()
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(25)
@@ -68,7 +71,10 @@ export function StudentsTable({ students, loading }: StudentsTableProps) {
   }
 
   const handleViewStudent = (studentId: string) => {
-    router.push(`/trading-journal/students/${studentId}`)
+    const url = eventId
+      ? `/trading-journal/students/${studentId}?eventId=${eventId}`
+      : `/trading-journal/students/${studentId}`
+    router.push(url)
   }
 
   const formatCurrency = (value: number) => {
@@ -89,7 +95,7 @@ export function StudentsTable({ students, loading }: StudentsTableProps) {
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Search students by name or email..."
+          placeholder={t('students.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -106,13 +112,13 @@ export function StudentsTable({ students, loading }: StudentsTableProps) {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Student</TableCell>
-              <TableCell align="center">Total Trades</TableCell>
-              <TableCell align="center">Win Rate</TableCell>
-              <TableCell align="right">Total P&L</TableCell>
-              <TableCell align="center">Last Trade</TableCell>
-              <TableCell align="center">Needs Review</TableCell>
-              <TableCell align="center">Actions</TableCell>
+              <TableCell>{t('students.student')}</TableCell>
+              <TableCell align="center">{t('students.totalTrades')}</TableCell>
+              <TableCell align="center">{t('students.winRate')}</TableCell>
+              <TableCell align="right">{t('students.totalPnl')}</TableCell>
+              <TableCell align="center">{t('students.lastTrade')}</TableCell>
+              <TableCell align="center">{t('students.needsReview')}</TableCell>
+              <TableCell align="center">{t('students.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -120,7 +126,7 @@ export function StudentsTable({ students, loading }: StudentsTableProps) {
               <TableRow>
                 <TableCell colSpan={7} align="center">
                   <Typography variant="body2" color="text.secondary">
-                    Loading students...
+                    {t('students.loading')}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -129,8 +135,8 @@ export function StudentsTable({ students, loading }: StudentsTableProps) {
                 <TableCell colSpan={7} align="center">
                   <Typography variant="body2" color="text.secondary">
                     {searchTerm
-                      ? 'No students found matching your search'
-                      : 'No students with trading journals yet'}
+                      ? t('students.noSearchResults')
+                      : t('students.noStudents')}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -203,24 +209,24 @@ export function StudentsTable({ students, loading }: StudentsTableProps) {
                     <Typography variant="caption" color="text.secondary">
                       {student.lastTradeDate
                         ? format(new Date(student.lastTradeDate), 'MMM d, yyyy')
-                        : 'Never'}
+                        : t('students.never')}
                     </Typography>
                   </TableCell>
 
                   <TableCell align="center">
                     {student.needsReview > 0 ? (
-                      <Tooltip title={`${student.needsReview} trades need review`}>
+                      <Tooltip title={t('students.tradesNeedReview', { count: student.needsReview })}>
                         <Badge badgeContent={student.needsReview} color="error">
                           <Warning color="warning" />
                         </Badge>
                       </Tooltip>
                     ) : (
-                      <Chip label="All reviewed" size="small" color="success" variant="outlined" />
+                      <Chip label={t('students.allReviewed')} size="small" color="success" variant="outlined" />
                     )}
                   </TableCell>
 
                   <TableCell align="center">
-                    <Tooltip title="View Journal">
+                    <Tooltip title={t('students.viewJournal')}>
                       <IconButton
                         size="small"
                         color="primary"

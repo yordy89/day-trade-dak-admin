@@ -27,6 +27,7 @@ import {
   CheckCircle,
   Cancel,
 } from '@mui/icons-material'
+import { useTranslation } from 'react-i18next'
 import { TradeStatistics } from '@/types/trading-journal'
 
 interface StatisticsDashboardProps {
@@ -35,6 +36,8 @@ interface StatisticsDashboardProps {
 }
 
 export function StatisticsDashboard({ statistics, loading }: StatisticsDashboardProps) {
+  const { t } = useTranslation('trading-journal')
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -74,7 +77,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
       <Card>
         <CardContent>
           <Typography variant="body2" color="text.secondary" align="center">
-            Loading statistics...
+            {t('statistics.loading')}
           </Typography>
           <LinearProgress sx={{ mt: 2 }} />
         </CardContent>
@@ -92,7 +95,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Stack direction="row" alignItems="center" spacing={1}>
                 <ShowChart color="primary" />
                 <Typography variant="body2" color="text.secondary">
-                  Total Trades
+                  {t('statistics.totalTrades')}
                 </Typography>
               </Stack>
               <Typography variant="h4" fontWeight={700}>
@@ -101,14 +104,14 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Stack direction="row" spacing={1}>
                 <Chip
                   icon={<CheckCircle />}
-                  label={`${statistics.winners || 0} Winners`}
+                  label={t('statistics.winnersCount', { count: statistics.winners || 0 })}
                   size="small"
                   color="success"
                   variant="outlined"
                 />
                 <Chip
                   icon={<Cancel />}
-                  label={`${statistics.losers || 0} Losers`}
+                  label={t('statistics.losersCount', { count: statistics.losers || 0 })}
                   size="small"
                   color="error"
                   variant="outlined"
@@ -126,7 +129,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Stack direction="row" alignItems="center" spacing={1}>
                 <TrendingUp color="success" />
                 <Typography variant="body2" color="text.secondary">
-                  Win Rate
+                  {t('statistics.winRate')}
                 </Typography>
               </Stack>
               <Typography variant="h4" fontWeight={700} color={getWinRateColor(statistics.winRate)}>
@@ -150,7 +153,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Stack direction="row" alignItems="center" spacing={1}>
                 <AttachMoney color="primary" />
                 <Typography variant="body2" color="text.secondary">
-                  Total P&L
+                  {t('statistics.totalPnl')}
                 </Typography>
               </Stack>
               <Typography
@@ -162,10 +165,10 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               </Typography>
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="caption" color="text.secondary">
-                  Gross: {formatCurrency(statistics.totalGross)}
+                  {t('statistics.gross')}: {formatCurrency(statistics.totalGross)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Fees: {formatCurrency(statistics.totalCommission)}
+                  {t('statistics.fees')}: {formatCurrency(statistics.totalCommission)}
                 </Typography>
               </Stack>
             </Stack>
@@ -180,7 +183,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Timeline color="primary" />
                 <Typography variant="body2" color="text.secondary">
-                  Profit Factor
+                  {t('statistics.profitFactor')}
                 </Typography>
               </Stack>
               <Typography
@@ -191,7 +194,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
                 {formatNumber(statistics.profitFactor, 2)}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {(statistics.profitFactor || 0) >= 1 ? 'Profitable' : 'Unprofitable'}
+                {(statistics.profitFactor || 0) >= 1 ? t('statistics.profitable') : t('statistics.unprofitable')}
               </Typography>
             </Stack>
           </CardContent>
@@ -203,13 +206,13 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Performance Metrics
+              {t('statistics.performanceMetrics')}
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <Stack spacing={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Average Win
+                    {t('statistics.averageWin')}
                   </Typography>
                   <Typography variant="body1" fontWeight={600} color="success.main">
                     {formatCurrency(statistics.avgWin || 0)}
@@ -219,7 +222,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Grid item xs={6}>
                 <Stack spacing={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Average Loss
+                    {t('statistics.averageLoss')}
                   </Typography>
                   <Typography variant="body1" fontWeight={600} color="error.main">
                     {formatCurrency(Math.abs(statistics.avgLoss || 0))}
@@ -229,7 +232,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Grid item xs={6}>
                 <Stack spacing={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Largest Win
+                    {t('statistics.largestWin')}
                   </Typography>
                   <Typography variant="body1" fontWeight={600} color="success.main">
                     {formatCurrency(statistics.largestWin || 0)}
@@ -239,7 +242,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Grid item xs={6}>
                 <Stack spacing={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Largest Loss
+                    {t('statistics.largestLoss')}
                   </Typography>
                   <Typography variant="body1" fontWeight={600} color="error.main">
                     {formatCurrency(Math.abs(statistics.largestLoss || 0))}
@@ -249,7 +252,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Grid item xs={6}>
                 <Stack spacing={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Avg R-Multiple
+                    {t('statistics.avgRMultiple')}
                   </Typography>
                   <Typography variant="body1" fontWeight={600}>
                     {formatNumber(statistics.avgRMultiple, 2)}R
@@ -259,7 +262,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Grid item xs={6}>
                 <Stack spacing={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Expectancy
+                    {t('statistics.expectancy')}
                   </Typography>
                   <Typography
                     variant="body1"
@@ -273,7 +276,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Grid item xs={6}>
                 <Stack spacing={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Avg Holding Time
+                    {t('statistics.avgHoldingTime')}
                   </Typography>
                   <Typography variant="body1" fontWeight={600}>
                     {formatTime(statistics.avgHoldingTime)}
@@ -283,7 +286,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               <Grid item xs={6}>
                 <Stack spacing={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Total Volume
+                    {t('statistics.totalVolume')}
                   </Typography>
                   <Typography variant="body1" fontWeight={600}>
                     {formatCurrency(statistics.totalVolume || 0)}
@@ -295,53 +298,55 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
         </Card>
       </Grid>
 
-      {/* Strategy Breakdown */}
+      {/* Option Type Breakdown */}
       <Grid item xs={12} md={6}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Performance by Strategy
+              {t('statistics.performanceByOptionType')}
             </Typography>
-            {statistics.strategyStats && statistics.strategyStats.length > 0 ? (
+            {statistics.optionTypeStats && statistics.optionTypeStats.length > 0 ? (
               <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Strategy</TableCell>
-                      <TableCell align="center">Trades</TableCell>
-                      <TableCell align="center">Win Rate</TableCell>
-                      <TableCell align="right">P&L</TableCell>
+                      <TableCell>{t('statistics.type')}</TableCell>
+                      <TableCell align="center">{t('statistics.trades')}</TableCell>
+                      <TableCell align="center">{t('statistics.winRate')}</TableCell>
+                      <TableCell align="right">{t('statistics.pnl')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {statistics.strategyStats.map((strategy, index) => (
+                    {statistics.optionTypeStats.map((optionType, index) => (
                       <TableRow key={index}>
                         <TableCell>
-                          <Typography variant="body2" fontWeight={600}>
-                            {strategy._id || 'Unknown'}
-                          </Typography>
+                          <Chip
+                            label={(optionType._id || t('statistics.unknown')).toUpperCase()}
+                            size="small"
+                            color={optionType._id === 'call' ? 'success' : 'error'}
+                          />
                         </TableCell>
                         <TableCell align="center">
-                          <Chip label={strategy.trades} size="small" />
+                          <Chip label={optionType.trades} size="small" variant="outlined" />
                         </TableCell>
                         <TableCell align="center">
                           <Typography
                             variant="body2"
                             color={
-                              (strategy.winRate || 0) >= 50 ? 'success.main' : 'error.main'
+                              (optionType.winRate || 0) >= 50 ? 'success.main' : 'error.main'
                             }
                             fontWeight={600}
                           >
-                            {formatNumber(strategy.winRate, 1)}%
+                            {formatNumber(optionType.winRate, 1)}%
                           </Typography>
                         </TableCell>
                         <TableCell align="right">
                           <Typography
                             variant="body2"
-                            color={(strategy.pnl || 0) >= 0 ? 'success.main' : 'error.main'}
+                            color={(optionType.pnl || 0) >= 0 ? 'success.main' : 'error.main'}
                             fontWeight={600}
                           >
-                            {formatCurrency(strategy.pnl || 0)}
+                            {formatCurrency(optionType.pnl || 0)}
                           </Typography>
                         </TableCell>
                       </TableRow>
@@ -351,7 +356,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               </TableContainer>
             ) : (
               <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>
-                No strategy data available
+                {t('statistics.noOptionTypeData')}
               </Typography>
             )}
           </CardContent>
@@ -363,7 +368,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Performance by Market
+              {t('statistics.performanceByMarket')}
             </Typography>
             {statistics.marketStats && statistics.marketStats.length > 0 ? (
               <Grid container spacing={2}>
@@ -379,10 +384,10 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
                     >
                       <Stack spacing={1}>
                         <Typography variant="subtitle2" fontWeight={600} textTransform="uppercase">
-                          {market._id || 'Unknown'}
+                          {market._id || t('statistics.unknown')}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {market.trades} trades
+                          {t('statistics.tradesCount', { count: market.trades })}
                         </Typography>
                         <Typography
                           variant="h6"
@@ -398,7 +403,7 @@ export function StatisticsDashboard({ statistics, loading }: StatisticsDashboard
               </Grid>
             ) : (
               <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>
-                No market data available
+                {t('statistics.noMarketData')}
               </Typography>
             )}
           </CardContent>

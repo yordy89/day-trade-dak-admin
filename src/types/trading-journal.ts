@@ -11,6 +11,11 @@ export enum TradeDirection {
   SHORT = 'short',
 }
 
+export enum OptionType {
+  CALL = 'call',
+  PUT = 'put',
+}
+
 export enum EmotionType {
   CONFIDENT = 'confident',
   ANXIOUS = 'anxious',
@@ -76,6 +81,10 @@ export interface Trade {
   entryPrice: number
   positionSize: number
   direction: TradeDirection
+  // Options-specific fields
+  optionType?: OptionType
+  strikePrice?: number
+  expirationDate?: Date
   exitTime?: Date
   exitPrice?: number
   exitReason?: string
@@ -258,6 +267,12 @@ export interface TradeStatistics {
     _id: string
     trades: number
     pnl: number
+  }>
+  optionTypeStats?: Array<{
+    _id: string // 'call' or 'put'
+    trades: number
+    pnl: number
+    winRate: number
   }>
 }
 

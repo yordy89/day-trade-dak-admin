@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import {
   Box,
   Typography,
@@ -33,11 +35,15 @@ import {
 } from '@mui/icons-material'
 
 export default function TradingJournalPage() {
+  const { t } = useTranslation('trading-journal')
   const { showError } = useSnackbar()
+  const searchParams = useSearchParams()
+  const initialEventId = searchParams.get('eventId') || ''
+
   const [students, setStudents] = useState<StudentWithJournal[]>([])
   const [loading, setLoading] = useState(true)
   const [events, setEvents] = useState<any[]>([])
-  const [selectedEventId, setSelectedEventId] = useState<string>('')
+  const [selectedEventId, setSelectedEventId] = useState<string>(initialEventId)
 
   useEffect(() => {
     loadEvents()
@@ -64,7 +70,7 @@ export default function TradingJournalPage() {
       )
       setStudents(data)
     } catch (error: any) {
-      showError(error.response?.data?.message || 'Failed to load students')
+      showError(error.response?.data?.message || t('students.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -86,8 +92,8 @@ export default function TradingJournalPage() {
   return (
     <AdminLayout>
       <PageHeader
-        title="Trading Journal"
-        subtitle="Review and provide feedback on student trading performance"
+        title={t('title')}
+        subtitle={t('subtitle')}
       />
 
       {/* Event Filter */}
@@ -96,14 +102,14 @@ export default function TradingJournalPage() {
           <Stack direction="row" spacing={2} alignItems="center">
             <FilterList color="action" />
             <FormControl sx={{ minWidth: 300 }}>
-              <InputLabel>Filter by Event</InputLabel>
+              <InputLabel>{t('students.filterByEvent')}</InputLabel>
               <Select
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
-                label="Filter by Event"
+                label={t('students.filterByEvent')}
               >
                 <MenuItem value="">
-                  <em>All Students (No Filter)</em>
+                  <em>{t('students.allEvents')}</em>
                 </MenuItem>
                 {events.map((event) => (
                   <MenuItem key={event._id} value={event._id}>
@@ -119,12 +125,12 @@ export default function TradingJournalPage() {
                 startIcon={<Clear />}
                 onClick={handleClearFilter}
               >
-                Clear Filter
+                {t('students.clearFilter')}
               </Button>
             )}
             {selectedEventId && (
               <Typography variant="body2" color="text.secondary">
-                Showing only students with trading journal access for this event
+                {t('students.filterMessage')}
               </Typography>
             )}
           </Stack>
@@ -143,7 +149,7 @@ export default function TradingJournalPage() {
                     {totalStudents}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Total Students
+                    {t('students.totalStudents')}
                   </Typography>
                 </Box>
               </Stack>
@@ -161,7 +167,7 @@ export default function TradingJournalPage() {
                     {totalTrades}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Total Trades
+                    {t('students.totalTrades')}
                   </Typography>
                 </Box>
               </Stack>
@@ -179,7 +185,7 @@ export default function TradingJournalPage() {
                     {avgWinRate.toFixed(1)}%
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Avg Win Rate
+                    {t('students.avgWinRate')}
                   </Typography>
                 </Box>
               </Stack>
@@ -197,7 +203,7 @@ export default function TradingJournalPage() {
                     {needsReview}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Needs Review
+                    {t('students.needsReview')}
                   </Typography>
                 </Box>
               </Stack>
@@ -212,7 +218,7 @@ export default function TradingJournalPage() {
           <Stack direction="row" spacing={3} alignItems="center">
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Profitable Students
+                {t('students.profitableStudents')}
               </Typography>
               <Stack direction="row" alignItems="center" spacing={1}>
                 <TrendingUp color="success" fontSize="small" />
@@ -226,7 +232,7 @@ export default function TradingJournalPage() {
             </Box>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Unprofitable Students
+                {t('students.unprofitableStudents')}
               </Typography>
               <Stack direction="row" alignItems="center" spacing={1}>
                 <TrendingDown color="error" fontSize="small" />
@@ -243,7 +249,7 @@ export default function TradingJournalPage() {
       </Card>
 
       {/* Students Table */}
-      <StudentsTable students={students} loading={loading} />
+      <StudentsTable students={students} loading={loading} eventId={selectedEventId} />
     </AdminLayout>
   )
 }

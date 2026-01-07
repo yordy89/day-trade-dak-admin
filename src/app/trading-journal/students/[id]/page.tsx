@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import {
   Box,
   Typography,
@@ -10,16 +11,13 @@ import {
   Tabs,
   Tab,
   Stack,
-  Chip,
   Avatar,
   Button,
   Divider,
 } from '@mui/material'
 import {
-  Person,
   Email,
   TrendingUp,
-  TrendingDown,
   Assessment,
   ArrowBack,
   Download,
@@ -31,7 +29,7 @@ import { tradingJournalService } from '@/services/trading-journal.service'
 import { userService } from '@/services/user.service'
 import { useSnackbar } from '@/hooks/use-snackbar'
 import { StatisticsDashboard } from '@/components/trading-journal/statistics-dashboard'
-import { TradeReviewCard } from '@/components/trading-journal/trade-review-card'
+import { TradesTable } from '@/components/trading-journal/trades-table'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -56,16 +54,22 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function StudentDetailPage() {
+  const { t } = useTranslation('trading-journal')
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const studentId = params.id as string
+  const eventId = searchParams.get('eventId')
   const { showError, showSuccess } = useSnackbar()
 
   const [activeTab, setActiveTab] = useState(0)
   const [student, setStudent] = useState<any>(null)
   const [statistics, setStatistics] = useState<TradeStatistics | null>(null)
   const [trades, setTrades] = useState<Trade[]>([])
+  const [totalTrades, setTotalTrades] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
 
   useEffect(() => {
     if (studentId) {
@@ -73,33 +77,61 @@ export default function StudentDetailPage() {
     }
   }, [studentId])
 
+  useEffect(() => {
+    if (studentId) {
+      loadTrades()
+    }
+  }, [studentId, page, rowsPerPage])
+
   const loadStudentData = async () => {
     try {
       setLoading(true)
-      const [userData, statsData, tradesData] = await Promise.all([
+      const [userData, statsData] = await Promise.all([
         userService.getUserById(studentId),
         tradingJournalService.getStudentStatistics(studentId),
-        tradingJournalService.getStudentTrades(studentId, {
-          page: 1,
-          limit: 20,
-          sortBy: 'tradeDate',
-          sortOrder: 'desc',
-        }),
       ])
 
       setStudent(userData)
       setStatistics(statsData)
-      setTrades(tradesData.trades)
     } catch (error: any) {
-      showError(error.response?.data?.message || 'Failed to load student data')
+      showError(error.response?.data?.message || t('studentDetail.loadFailed'))
     } finally {
       setLoading(false)
     }
   }
 
+  const loadTrades = async () => {
+    try {
+      const tradesData = await tradingJournalService.getStudentTrades(studentId, {
+        page: page + 1,
+        limit: rowsPerPage,
+        sortBy: 'tradeDate',
+        sortOrder: 'desc',
+      })
+      setTrades(tradesData.trades)
+      setTotalTrades(tradesData.total)
+    } catch (error: any) {
+      showError(error.response?.data?.message || t('studentDetail.loadFailed'))
+    }
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+  }
+
+  const handleRowsPerPageChange = (newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage)
+    setPage(0)
+  }
+
+  const handleFeedbackCreated = () => {
+    loadTrades()
+    loadStudentData()
+  }
+
   const handleExport = async () => {
     try {
-      const blob = await tradingJournalService.exportStudentTrades(studentId, {}, 'csv')
+      const blob = await tradingJournalService.exportStudentTrades(studentId, {})
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -108,9 +140,9 @@ export default function StudentDetailPage() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      showSuccess('Trades exported successfully')
+      showSuccess(t('studentDetail.exportSuccess'))
     } catch (error: any) {
-      showError(error.response?.data?.message || 'Failed to export trades')
+      showError(error.response?.data?.message || t('studentDetail.exportFailed'))
     }
   }
 
@@ -121,7 +153,7 @@ export default function StudentDetailPage() {
   if (loading || !student || !statistics) {
     return (
       <AdminLayout>
-        <Typography>Loading student data...</Typography>
+        <Typography>{t('studentDetail.loading')}</Typography>
       </AdminLayout>
     )
   }
@@ -131,10 +163,15 @@ export default function StudentDetailPage() {
       <Box sx={{ mb: 3 }}>
         <Button
           startIcon={<ArrowBack />}
-          onClick={() => router.push('/trading-journal')}
+          onClick={() => {
+            const backUrl = eventId
+              ? `/trading-journal?eventId=${eventId}`
+              : '/trading-journal'
+            router.push(backUrl)
+          }}
           sx={{ mb: 2 }}
         >
-          Back to Students
+          {t('studentDetail.backToStudents')}
         </Button>
 
         <PageHeader
@@ -163,7 +200,7 @@ export default function StudentDetailPage() {
                 startIcon={<Download />}
                 onClick={handleExport}
               >
-                Export Trades
+                {t('studentDetail.export')}
               </Button>
             </Stack>
           }
@@ -180,7 +217,7 @@ export default function StudentDetailPage() {
           >
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Total Trades
+                {t('statistics.totalTrades')}
               </Typography>
               <Typography variant="h5" fontWeight={700}>
                 {statistics.totalTrades}
@@ -188,7 +225,7 @@ export default function StudentDetailPage() {
             </Box>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Win Rate
+                {t('statistics.winRate')}
               </Typography>
               <Typography
                 variant="h5"
@@ -200,7 +237,7 @@ export default function StudentDetailPage() {
             </Box>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Total P&L
+                {t('statistics.totalPnl')}
               </Typography>
               <Typography
                 variant="h5"
@@ -212,7 +249,7 @@ export default function StudentDetailPage() {
             </Box>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Profit Factor
+                {t('statistics.profitFactor')}
               </Typography>
               <Typography variant="h5" fontWeight={700}>
                 {(statistics.profitFactor || 0).toFixed(2)}
@@ -226,8 +263,8 @@ export default function StudentDetailPage() {
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-            <Tab label="Analytics" icon={<Assessment />} iconPosition="start" />
-            <Tab label="Recent Trades" icon={<TrendingUp />} iconPosition="start" />
+            <Tab label={t('studentDetail.analytics')} icon={<Assessment />} iconPosition="start" />
+            <Tab label={t('studentDetail.recentTrades')} icon={<TrendingUp />} iconPosition="start" />
           </Tabs>
         </Box>
 
@@ -236,21 +273,15 @@ export default function StudentDetailPage() {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          <Stack spacing={3}>
-            {trades.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" align="center">
-                No trades found
-              </Typography>
-            ) : (
-              trades.map((trade) => (
-                <TradeReviewCard
-                  key={trade._id}
-                  trade={trade}
-                  onFeedbackCreated={loadStudentData}
-                />
-              ))
-            )}
-          </Stack>
+          <TradesTable
+            trades={trades}
+            totalTrades={totalTrades}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handlePageChange}
+            onRowsPerPageChange={handleRowsPerPageChange}
+            onFeedbackCreated={handleFeedbackCreated}
+          />
         </TabPanel>
       </Card>
     </AdminLayout>

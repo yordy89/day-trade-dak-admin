@@ -29,7 +29,8 @@ import {
   Notes,
   RateReview,
 } from '@mui/icons-material'
-import { Trade } from '@/types/trading-journal'
+import { useTranslation } from 'react-i18next'
+import { Trade, MarketType } from '@/types/trading-journal'
 import { format } from 'date-fns'
 import { FeedbackForm } from './feedback-form'
 
@@ -39,7 +40,18 @@ interface TradeReviewCardProps {
 }
 
 export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardProps) {
+  const { t } = useTranslation('trading-journal')
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
+
+  const isOptions = trade.market === MarketType.OPTIONS
+
+  // Get the display label for direction/option type
+  const getDirectionLabel = () => {
+    if (isOptions && trade.optionType) {
+      return trade.optionType.toUpperCase()
+    }
+    return trade.direction.toUpperCase()
+  }
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -53,8 +65,11 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
     return `${(value || 0).toFixed(2)}%`
   }
 
-  const getDirectionColor = (direction: string) => {
-    return direction === 'long' ? 'success' : 'error'
+  const getDirectionColor = () => {
+    if (isOptions && trade.optionType) {
+      return trade.optionType === 'call' ? 'success' : 'error'
+    }
+    return trade.direction === 'long' ? 'success' : 'error'
   }
 
   const getPnlColor = (pnl: number | null | undefined) => {
@@ -100,16 +115,16 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                 {trade.symbol}
               </Typography>
               <Chip
-                label={trade.direction.toUpperCase()}
+                label={getDirectionLabel()}
                 size="small"
-                color={getDirectionColor(trade.direction)}
+                color={getDirectionColor()}
               />
               <Chip label={trade.market.toUpperCase()} size="small" variant="outlined" />
-              {trade.isOpen && <Chip label="OPEN" size="small" color="warning" />}
+              {trade.isOpen && <Chip label={t('trades.open')} size="small" color="warning" />}
               {trade.isReviewed && (
                 <Chip
                   icon={<CheckCircle />}
-                  label="Reviewed"
+                  label={t('trades.reviewed')}
                   size="small"
                   color="success"
                   variant="outlined"
@@ -125,7 +140,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
               onClick={() => setFeedbackDialogOpen(true)}
               disabled={trade.isReviewed}
             >
-              Provide Feedback
+              {t('trades.provideFeedback')}
             </Button>
           }
         />
@@ -137,10 +152,10 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
               {trade.isOpen ? (
                 <Alert severity="info" icon={<ShowChart />}>
                   <Typography variant="body1" fontWeight={600}>
-                    Position is currently OPEN
+                    {t('tradeDetail.positionOpen')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    P&L will be calculated when the position is closed
+                    {t('tradeDetail.pnlCalculatedOnClose')}
                   </Typography>
                 </Alert>
               ) : (
@@ -151,7 +166,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                   <Stack direction="row" spacing={3} alignItems="center">
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        Net P&L
+                        {t('tradeDetail.netPnl')}
                       </Typography>
                       <Typography variant="h5" fontWeight={700} color={getPnlColor(trade.netPnl)}>
                         {formatCurrency(trade.netPnl || 0)}
@@ -160,7 +175,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     <Divider orientation="vertical" flexItem />
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        R-Multiple
+                        {t('tradeDetail.rMultiple')}
                       </Typography>
                       <Typography variant="h6" fontWeight={600}>
                         {(trade.rMultiple || 0).toFixed(2)}R
@@ -169,10 +184,10 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     <Divider orientation="vertical" flexItem />
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        Result
+                        {t('tradeDetail.result')}
                       </Typography>
                       <Typography variant="h6" fontWeight={600}>
-                        {trade.isWinner ? 'Winner' : 'Loser'}
+                        {trade.isWinner ? t('tradeDetail.winner') : t('tradeDetail.loser')}
                       </Typography>
                     </Box>
                   </Stack>
@@ -186,14 +201,14 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     <Schedule sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
-                    Trade Date & Time
+                    {t('tradeDetail.tradeDateAndTime')}
                   </Typography>
                   <Typography variant="body2">
                     {format(new Date(trade.tradeDate), 'PPP')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Entry: {format(new Date(trade.entryTime), 'p')}
-                    {trade.exitTime && ` • Exit: ${format(new Date(trade.exitTime), 'p')}`}
+                    {t('tradeDetail.entry')}: {format(new Date(trade.entryTime), 'p')}
+                    {trade.exitTime && ` • ${t('tradeDetail.exit')}: ${format(new Date(trade.exitTime), 'p')}`}
                   </Typography>
                 </Box>
 
@@ -202,12 +217,12 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     <AttachMoney sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
-                    Entry & Exit
+                    {t('tradeDetail.entryAndExit')}
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Entry Price
+                        {t('tradeDetail.entryPrice')}{isOptions ? ` ${t('tradeDetail.perShare')}` : ''}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
                         {formatCurrency(trade.entryPrice)}
@@ -215,28 +230,42 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Exit Price
+                        {t('tradeDetail.exitPrice')}{isOptions ? ` ${t('tradeDetail.perShare')}` : ''}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
-                        {trade.exitPrice ? formatCurrency(trade.exitPrice) : 'N/A'}
+                        {trade.exitPrice ? formatCurrency(trade.exitPrice) : t('common.na')}
                       </Typography>
                     </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">
-                        Stop Loss
-                      </Typography>
-                      <Typography variant="body2" fontWeight={600}>
-                        {formatCurrency(trade.stopLoss || 0)}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">
-                        Take Profit
-                      </Typography>
-                      <Typography variant="body2" fontWeight={600}>
-                        {trade.takeProfit ? formatCurrency(trade.takeProfit) : 'N/A'}
-                      </Typography>
-                    </Grid>
+                    {isOptions && (
+                      <Grid item xs={12}>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('tradeDetail.totalInvestment')}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {formatCurrency(trade.entryPrice * trade.positionSize * 100)}
+                        </Typography>
+                      </Grid>
+                    )}
+                    {trade.stopLoss !== undefined && trade.stopLoss !== null && trade.stopLoss > 0 && (
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('tradeDetail.stopLoss')}{isOptions ? ` ${t('tradeDetail.perShare')}` : ''}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {formatCurrency(trade.stopLoss)}
+                        </Typography>
+                      </Grid>
+                    )}
+                    {trade.takeProfit !== undefined && trade.takeProfit !== null && trade.takeProfit > 0 && (
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('tradeDetail.takeProfit')}{isOptions ? ` ${t('tradeDetail.perShare')}` : ''}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {formatCurrency(trade.takeProfit)}
+                        </Typography>
+                      </Grid>
+                    )}
                   </Grid>
                 </Box>
 
@@ -245,20 +274,20 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     <ShowChart sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
-                    Position & Risk
+                    {t('tradeDetail.positionAndRisk')}
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Position Size
+                        {t('tradeDetail.positionSize')}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
-                        {trade.positionSize} shares
+                        {trade.positionSize} {isOptions ? t('tradeDetail.contracts') : t('tradeDetail.shares')}
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Risk Amount
+                        {t('tradeDetail.riskAmount')}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
                         {formatCurrency(trade.riskAmount || 0)}
@@ -266,7 +295,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Risk %
+                        {t('tradeDetail.riskPercent')}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
                         {formatPercent(trade.riskPercentage)}
@@ -274,7 +303,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Commission
+                        {t('tradeDetail.commission')}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
                         {formatCurrency(trade.commission || 0)}
@@ -290,12 +319,12 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Strategy Details
+                    {t('tradeDetail.strategyDetails')}
                   </Typography>
                   <Grid container spacing={1}>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Setup
+                        {t('tradeDetail.setup')}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
                         {trade.setup}
@@ -303,7 +332,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Strategy
+                        {t('tradeDetail.strategy')}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
                         {trade.strategy}
@@ -311,7 +340,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Timeframe
+                        {t('tradeDetail.timeframe')}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
                         {trade.timeframe}
@@ -319,7 +348,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">
-                        Confidence
+                        {t('tradeDetail.confidence')}
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
                         {trade.confidence}/10
@@ -333,13 +362,13 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     <Psychology sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
-                    Emotional State
+                    {t('tradeDetail.emotionalState')}
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                     {trade.emotionBefore && (
                       <Box>
                         <Typography variant="caption" color="text.secondary">
-                          Before
+                          {t('tradeDetail.before')}
                         </Typography>
                         <Box>{getEmotionChip(trade.emotionBefore)}</Box>
                       </Box>
@@ -347,7 +376,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     {trade.emotionDuring && (
                       <Box>
                         <Typography variant="caption" color="text.secondary">
-                          During
+                          {t('tradeDetail.during')}
                         </Typography>
                         <Box>{getEmotionChip(trade.emotionDuring)}</Box>
                       </Box>
@@ -355,9 +384,17 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     {trade.emotionAfter && (
                       <Box>
                         <Typography variant="caption" color="text.secondary">
-                          After
+                          {t('tradeDetail.after')}
                         </Typography>
                         <Box>{getEmotionChip(trade.emotionAfter)}</Box>
+                      </Box>
+                    )}
+                    {trade.exitEmotionState && (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('tradeDetail.atExit')}
+                        </Typography>
+                        <Box>{getEmotionChip(trade.exitEmotionState)}</Box>
                       </Box>
                     )}
                   </Stack>
@@ -368,7 +405,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     <Divider />
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Exit Reason
+                        {t('tradeDetail.exitReason')}
                       </Typography>
                       <Typography variant="body2">{trade.exitReason}</Typography>
                     </Box>
@@ -380,7 +417,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                     <Divider />
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Tags
+                        {t('tradeDetail.tags')}
                       </Typography>
                       <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
                         {trade.tags.map((tag, index) => (
@@ -394,18 +431,19 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
             </Grid>
 
             {/* Notes Section */}
-            {(trade.preTradeAnalysis || trade.postTradeNotes || trade.lessonsLearned) && (
+            {(trade.preTradeAnalysis || trade.postTradeNotes || trade.lessonsLearned ||
+              trade.exitReasonNotes || trade.lessonsLearnedOnExit) && (
               <Grid item xs={12}>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   <Notes sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
-                  Trader Notes
+                  {t('tradeDetail.traderNotes')}
                 </Typography>
                 <Stack spacing={2}>
                   {trade.preTradeAnalysis && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                        Pre-Trade Analysis
+                        {t('tradeDetail.preTradeAnalysis')}
                       </Typography>
                       <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                         {trade.preTradeAnalysis}
@@ -415,7 +453,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                   {trade.postTradeNotes && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                        Post-Trade Notes
+                        {t('tradeDetail.postTradeNotes')}
                       </Typography>
                       <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                         {trade.postTradeNotes}
@@ -425,11 +463,44 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
                   {trade.lessonsLearned && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                        Lessons Learned
+                        {t('tradeDetail.lessonsLearned')}
                       </Typography>
                       <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                         {trade.lessonsLearned}
                       </Typography>
+                    </Box>
+                  )}
+                  {trade.exitReasonNotes && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        {t('tradeDetail.exitReasonNotes')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {trade.exitReasonNotes}
+                      </Typography>
+                    </Box>
+                  )}
+                  {trade.lessonsLearnedOnExit && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        {t('tradeDetail.lessonsLearnedOnExit')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {trade.lessonsLearnedOnExit}
+                      </Typography>
+                    </Box>
+                  )}
+                  {trade.wouldRepeatTrade !== undefined && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        {t('tradeDetail.wouldRepeatTrade')}
+                      </Typography>
+                      <Chip
+                        label={trade.wouldRepeatTrade ? t('common.yes') : t('common.no')}
+                        size="small"
+                        color={trade.wouldRepeatTrade ? 'success' : 'error'}
+                        variant="outlined"
+                      />
                     </Box>
                   )}
                 </Stack>
@@ -446,7 +517,7 @@ export function TradeReviewCard({ trade, onFeedbackCreated }: TradeReviewCardPro
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Provide Feedback for {trade.symbol}</DialogTitle>
+        <DialogTitle>{t('feedback.provideFeedbackFor', { symbol: trade.symbol })}</DialogTitle>
         <DialogContent>
           <FeedbackForm
             trade={trade}
