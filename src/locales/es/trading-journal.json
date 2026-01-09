@@ -8,7 +8,9 @@
     "noStudents": "No se encontraron estudiantes",
     "noStudentsMessage": "Ningún estudiante tiene entradas en el diario de trading todavía.",
     "totalTrades": "Total de Operaciones",
+    "totalStudents": "Total Estudiantes",
     "winRate": "Tasa de Aciertos",
+    "avgWinRate": "Tasa de Aciertos Promedio",
     "totalPnl": "P&L Total",
     "lastTrade": "Última Operación",
     "viewJournal": "Ver Diario",
@@ -20,7 +22,12 @@
     "refresh": "Actualizar",
     "filterByEvent": "Filtrar por Evento",
     "allEvents": "Todos los Eventos",
-    "loadFailed": "Error al cargar estudiantes"
+    "loadFailed": "Error al cargar estudiantes",
+    "needsReview": "Necesita Revisión",
+    "profitableStudents": "Estudiantes Rentables",
+    "unprofitableStudents": "Estudiantes No Rentables",
+    "student": "Estudiante",
+    "allReviewed": "Todos Revisados"
   },
   "studentDetail": {
     "title": "Diario del Estudiante",
