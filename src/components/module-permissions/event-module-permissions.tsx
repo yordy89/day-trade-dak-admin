@@ -69,11 +69,15 @@ interface EventData {
 interface EventRegistration {
   _id: string;
   user: {
-    _id: string;
+    _id: string | null;
     firstName: string;
     lastName: string;
     email: string;
   };
+  // Registration-level fields (fallback when user not linked)
+  firstName?: string;
+  lastName?: string;
+  email?: string;
   ticketType: string;
   status: string;
   createdAt: string;
@@ -203,7 +207,7 @@ export function EventModulePermissions() {
       // Fetch permissions for each user in parallel
       // Only include registrations with a linked user account (user._id is not null)
       const userIds = regs
-        .filter(r => r.user?._id)
+        .filter((r): r is EventRegistration & { user: { _id: string } } => !!r.user?._id)
         .map(r => r.user._id);
 
       const uniqueUserIds = [...new Set(userIds)];
@@ -246,11 +250,12 @@ export function EventModulePermissions() {
       setSubmitting(true);
 
       // Prepare participants data with user info
+      // Use registration-level fields as fallback when user account not linked
       const participants = registrations.map(reg => ({
-        userId: reg.user?._id,
-        email: reg.user?.email || '',
-        firstName: reg.user?.firstName || '',
-        lastName: reg.user?.lastName || '',
+        userId: reg.user?._id || undefined,
+        email: reg.user?.email || reg.email || '',
+        firstName: reg.user?.firstName || reg.firstName || '',
+        lastName: reg.user?.lastName || reg.lastName || '',
         isRegistered: !!reg.user?._id,
       }));
 
@@ -316,7 +321,7 @@ export function EventModulePermissions() {
       }
       // Update selectAllChecked based on selection
       const registeredUserIds = registrations
-        .filter(r => r.user?._id)
+        .filter((r): r is EventRegistration & { user: { _id: string } } => !!r.user?._id)
         .map(r => r.user._id);
       setSelectAllChecked(registeredUserIds.every(id => newSet.has(id)));
       return newSet;
@@ -329,7 +334,7 @@ export function EventModulePermissions() {
       setSelectAllChecked(false);
     } else {
       const registeredUserIds = registrations
-        .filter(r => r.user?._id)
+        .filter((r): r is EventRegistration & { user: { _id: string } } => !!r.user?._id)
         .map(r => r.user._id);
       setSelectedParticipants(new Set(registeredUserIds));
       setSelectAllChecked(true);
@@ -703,11 +708,11 @@ export function EventModulePermissions() {
                         {registrations.map((registration) => (
                           <TableRow
                             key={registration._id}
-                            selected={selectedParticipants.has(registration.user?._id)}
+                            selected={!!registration.user?._id && selectedParticipants.has(registration.user._id)}
                           >
                             <TableCell padding="checkbox">
                               <Checkbox
-                                checked={selectedParticipants.has(registration.user?._id)}
+                                checked={!!registration.user?._id && selectedParticipants.has(registration.user._id)}
                                 onChange={() => registration.user?._id && handleSelectParticipant(registration.user._id)}
                                 disabled={!registration.user?._id}
                               />
