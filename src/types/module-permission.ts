@@ -10,6 +10,7 @@ export enum ModuleType {
   MASTER_COURSE = 'masterCourse',
   STOCKS = 'stocks',
   TRADING_JOURNAL = 'tradingJournal',
+  MASTER_CLASSES_PURCHASE = 'masterClassesPurchase',
 }
 
 export interface ModulePermission {
@@ -75,4 +76,5 @@ export const MODULE_DISPLAY_NAMES: Record<ModuleType, { es: string; en: string }
   [ModuleType.MASTER_COURSE]: { es: 'Master Course', en: 'Master Course' },
   [ModuleType.STOCKS]: { es: 'Acciones', en: 'Stocks' },
   [ModuleType.TRADING_JOURNAL]: { es: 'Diario de Trading', en: 'Trading Journal' },
+  [ModuleType.MASTER_CLASSES_PURCHASE]: { es: 'Permiso Compra Masterclass', en: 'Master Classes Purchase Permission' },
 }
