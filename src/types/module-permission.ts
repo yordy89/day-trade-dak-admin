@@ -9,6 +9,7 @@ export enum ModuleType {
   VIP_EVENTS = 'vipEvents',
   MASTER_COURSE = 'masterCourse',
   STOCKS = 'stocks',
+  SUPPORT_VIDEOS = 'supportVideos',
   TRADING_JOURNAL = 'tradingJournal',
   MASTER_CLASSES_PURCHASE = 'masterClassesPurchase',
 }
@@ -75,6 +76,7 @@ export const MODULE_DISPLAY_NAMES: Record<ModuleType, { es: string; en: string }
   [ModuleType.VIP_EVENTS]: { es: 'Eventos VIP', en: 'VIP Events' },
   [ModuleType.MASTER_COURSE]: { es: 'Master Course', en: 'Master Course' },
   [ModuleType.STOCKS]: { es: 'Acciones', en: 'Stocks' },
+  [ModuleType.SUPPORT_VIDEOS]: { es: 'Videos de Soporte', en: 'Support Videos' },
   [ModuleType.TRADING_JOURNAL]: { es: 'Diario de Trading', en: 'Trading Journal' },
   [ModuleType.MASTER_CLASSES_PURCHASE]: { es: 'Permiso Compra Masterclass', en: 'Master Classes Purchase Permission' },
 }
