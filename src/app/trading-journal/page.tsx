@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import {
@@ -34,6 +34,8 @@ import {
   Clear,
 } from '@mui/icons-material'
 
+type StudentFilter = 'all' | 'pendingReview' | 'profitable' | 'unprofitable' | 'highWinRate' | 'lowWinRate' | 'recentlyActive' | 'inactive'
+
 export default function TradingJournalPage() {
   const { t } = useTranslation('trading-journal')
   const { showError } = useSnackbar()
@@ -44,6 +46,7 @@ export default function TradingJournalPage() {
   const [loading, setLoading] = useState(true)
   const [events, setEvents] = useState<any[]>([])
   const [selectedEventId, setSelectedEventId] = useState<string>(initialEventId)
+  const [studentFilter, setStudentFilter] = useState<StudentFilter>('all')
 
   useEffect(() => {
     loadEvents()
@@ -78,9 +81,37 @@ export default function TradingJournalPage() {
 
   const handleClearFilter = () => {
     setSelectedEventId('')
+    setStudentFilter('all')
   }
 
-  // Calculate overview stats
+  // Filter students based on selected filter
+  const filteredStudents = useMemo(() => {
+    const now = new Date()
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+    return students.filter((student) => {
+      switch (studentFilter) {
+        case 'pendingReview':
+          return (student.needsReview || 0) > 0
+        case 'profitable':
+          return (student.totalPnl || 0) > 0
+        case 'unprofitable':
+          return (student.totalPnl || 0) <= 0
+        case 'highWinRate':
+          return (student.winRate || 0) > 60
+        case 'lowWinRate':
+          return (student.winRate || 0) < 40
+        case 'recentlyActive':
+          return student.lastTradeDate && new Date(student.lastTradeDate) >= sevenDaysAgo
+        case 'inactive':
+          return !student.lastTradeDate || new Date(student.lastTradeDate) < sevenDaysAgo
+        default:
+          return true
+      }
+    })
+  }, [students, studentFilter])
+
+  // Calculate overview stats (from all students, not filtered)
   const totalStudents = students.length
   const totalTrades = students.reduce((sum, s) => sum + (s.totalTrades || 0), 0)
   const profitableStudents = students.filter((s) => (s.totalPnl || 0) > 0).length
@@ -96,17 +127,18 @@ export default function TradingJournalPage() {
         subtitle={t('subtitle')}
       />
 
-      {/* Event Filter */}
+      {/* Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
             <FilterList color="action" />
-            <FormControl sx={{ minWidth: 300 }}>
+            <FormControl sx={{ minWidth: 250 }}>
               <InputLabel>{t('students.filterByEvent')}</InputLabel>
               <Select
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
                 label={t('students.filterByEvent')}
+                size="small"
               >
                 <MenuItem value="">
                   <em>{t('students.allEvents')}</em>
@@ -118,20 +150,40 @@ export default function TradingJournalPage() {
                 ))}
               </Select>
             </FormControl>
-            {selectedEventId && (
+            <FormControl sx={{ minWidth: 200 }}>
+              <InputLabel>{t('students.filterByStatus')}</InputLabel>
+              <Select
+                value={studentFilter}
+                onChange={(e) => setStudentFilter(e.target.value as StudentFilter)}
+                label={t('students.filterByStatus')}
+                size="small"
+              >
+                <MenuItem value="all">{t('students.allStudents')}</MenuItem>
+                <MenuItem value="pendingReview">{t('students.pendingReview')}</MenuItem>
+                <MenuItem value="profitable">{t('students.profitable')}</MenuItem>
+                <MenuItem value="unprofitable">{t('students.unprofitable')}</MenuItem>
+                <MenuItem value="highWinRate">{t('students.highWinRate')}</MenuItem>
+                <MenuItem value="lowWinRate">{t('students.lowWinRate')}</MenuItem>
+                <MenuItem value="recentlyActive">{t('students.recentlyActive')}</MenuItem>
+                <MenuItem value="inactive">{t('students.inactive')}</MenuItem>
+              </Select>
+            </FormControl>
+            {(selectedEventId || studentFilter !== 'all') && (
               <Button
                 variant="outlined"
                 size="small"
                 startIcon={<Clear />}
                 onClick={handleClearFilter}
               >
-                {t('students.clearFilter')}
+                Clear Filters
               </Button>
             )}
-            {selectedEventId && (
-              <Typography variant="body2" color="text.secondary">
-                {t('students.filterMessage')}
-              </Typography>
+            {studentFilter !== 'all' && (
+              <Chip
+                label={`${filteredStudents.length} / ${totalStudents}`}
+                color="primary"
+                size="small"
+              />
             )}
           </Stack>
         </CardContent>
@@ -249,7 +301,7 @@ export default function TradingJournalPage() {
       </Card>
 
       {/* Students Table */}
-      <StudentsTable students={students} loading={loading} eventId={selectedEventId} />
+      <StudentsTable students={filteredStudents} loading={loading} eventId={selectedEventId} />
     </AdminLayout>
   )
 }

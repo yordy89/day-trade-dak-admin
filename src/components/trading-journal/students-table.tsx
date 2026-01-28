@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  TableSortLabel,
   Avatar,
   Chip,
   IconButton,
@@ -39,24 +40,76 @@ interface StudentsTableProps {
   eventId?: string
 }
 
+type SortField = 'name' | 'totalTrades' | 'winRate' | 'totalPnl' | 'lastTradeDate' | 'needsReview'
+type SortOrder = 'asc' | 'desc'
+
 export function StudentsTable({ students, loading, eventId }: StudentsTableProps) {
   const { t } = useTranslation('trading-journal')
   const router = useRouter()
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(25)
   const [searchTerm, setSearchTerm] = useState('')
+  const [sortField, setSortField] = useState<SortField>('totalTrades')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
-  const filteredStudents = students.filter((student) => {
-    if (!searchTerm) return true
-    const searchLower = searchTerm.toLowerCase()
-    return (
-      student.firstName.toLowerCase().includes(searchLower) ||
-      student.lastName.toLowerCase().includes(searchLower) ||
-      student.email.toLowerCase().includes(searchLower)
-    )
-  })
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('desc')
+    }
+    setPage(0)
+  }
 
-  const paginatedStudents = filteredStudents.slice(
+  const sortedAndFilteredStudents = useMemo(() => {
+    // First filter
+    let result = students.filter((student) => {
+      if (!searchTerm) return true
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        student.firstName?.toLowerCase().includes(searchLower) ||
+        student.lastName?.toLowerCase().includes(searchLower) ||
+        student.email?.toLowerCase().includes(searchLower)
+      )
+    })
+
+    // Then sort
+    result = [...result].sort((a, b) => {
+      let comparison = 0
+
+      switch (sortField) {
+        case 'name':
+          const nameA = `${a.firstName || ''} ${a.lastName || ''}`.toLowerCase()
+          const nameB = `${b.firstName || ''} ${b.lastName || ''}`.toLowerCase()
+          comparison = nameA.localeCompare(nameB)
+          break
+        case 'totalTrades':
+          comparison = (a.totalTrades || 0) - (b.totalTrades || 0)
+          break
+        case 'winRate':
+          comparison = (a.winRate || 0) - (b.winRate || 0)
+          break
+        case 'totalPnl':
+          comparison = (a.totalPnl || 0) - (b.totalPnl || 0)
+          break
+        case 'lastTradeDate':
+          const dateA = a.lastTradeDate ? new Date(a.lastTradeDate).getTime() : 0
+          const dateB = b.lastTradeDate ? new Date(b.lastTradeDate).getTime() : 0
+          comparison = dateA - dateB
+          break
+        case 'needsReview':
+          comparison = (a.needsReview || 0) - (b.needsReview || 0)
+          break
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    return result
+  }, [students, searchTerm, sortField, sortOrder])
+
+  const paginatedStudents = sortedAndFilteredStudents.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   )
@@ -86,7 +139,7 @@ export function StudentsTable({ students, loading, eventId }: StudentsTableProps
   }
 
   const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase()
+    return `${(firstName || '')[0] || ''}${(lastName || '')[0] || ''}`.toUpperCase() || '?'
   }
 
   return (
@@ -112,12 +165,60 @@ export function StudentsTable({ students, loading, eventId }: StudentsTableProps
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{t('students.student')}</TableCell>
-              <TableCell align="center">{t('students.totalTrades')}</TableCell>
-              <TableCell align="center">{t('students.winRate')}</TableCell>
-              <TableCell align="right">{t('students.totalPnl')}</TableCell>
-              <TableCell align="center">{t('students.lastTrade')}</TableCell>
-              <TableCell align="center">{t('students.needsReview')}</TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={sortField === 'name'}
+                  direction={sortField === 'name' ? sortOrder : 'asc'}
+                  onClick={() => handleSort('name')}
+                >
+                  {t('students.student')}
+                </TableSortLabel>
+              </TableCell>
+              <TableCell align="center">
+                <TableSortLabel
+                  active={sortField === 'totalTrades'}
+                  direction={sortField === 'totalTrades' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('totalTrades')}
+                >
+                  {t('students.totalTrades')}
+                </TableSortLabel>
+              </TableCell>
+              <TableCell align="center">
+                <TableSortLabel
+                  active={sortField === 'winRate'}
+                  direction={sortField === 'winRate' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('winRate')}
+                >
+                  {t('students.winRate')}
+                </TableSortLabel>
+              </TableCell>
+              <TableCell align="right">
+                <TableSortLabel
+                  active={sortField === 'totalPnl'}
+                  direction={sortField === 'totalPnl' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('totalPnl')}
+                >
+                  {t('students.totalPnl')}
+                </TableSortLabel>
+              </TableCell>
+              <TableCell align="center">
+                <TableSortLabel
+                  active={sortField === 'lastTradeDate'}
+                  direction={sortField === 'lastTradeDate' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('lastTradeDate')}
+                >
+                  {t('students.lastTrade')}
+                </TableSortLabel>
+              </TableCell>
+              <TableCell align="center">
+                <TableSortLabel
+                  active={sortField === 'needsReview'}
+                  direction={sortField === 'needsReview' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('needsReview')}
+                >
+                  {t('students.needsReview')}
+                </TableSortLabel>
+              </TableCell>
               <TableCell align="center">{t('students.actions')}</TableCell>
             </TableRow>
           </TableHead>
@@ -143,10 +244,10 @@ export function StudentsTable({ students, loading, eventId }: StudentsTableProps
             ) : (
               paginatedStudents.map((student) => (
                 <TableRow
-                  key={student._id}
+                  key={student._id || student.email}
                   hover
-                  sx={{ cursor: 'pointer' }}
-                  onClick={() => handleViewStudent(student._id)}
+                  sx={{ cursor: student._id ? 'pointer' : 'default' }}
+                  onClick={() => student._id && handleViewStudent(student._id)}
                 >
                   <TableCell>
                     <Stack direction="row" alignItems="center" spacing={2}>
@@ -226,18 +327,20 @@ export function StudentsTable({ students, loading, eventId }: StudentsTableProps
                   </TableCell>
 
                   <TableCell align="center">
-                    <Tooltip title={t('students.viewJournal')}>
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleViewStudent(student._id)
-                        }}
-                      >
-                        <Visibility />
-                      </IconButton>
-                    </Tooltip>
+                    {student._id && (
+                      <Tooltip title={t('students.viewJournal')}>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleViewStudent(student._id)
+                          }}
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -248,7 +351,7 @@ export function StudentsTable({ students, loading, eventId }: StudentsTableProps
 
       <TablePagination
         component="div"
-        count={filteredStudents.length}
+        count={sortedAndFilteredStudents.length}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
